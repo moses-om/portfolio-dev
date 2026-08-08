@@ -2139,6 +2139,7 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-bottom: 0.6rem;
+      text-align: center;
     }
 
     .research-title {
@@ -2147,6 +2148,7 @@
       color: var(--text-primary);
       margin-bottom: 0.6rem;
       line-height: 1.35;
+      text-align: center;
     }
 
     .research-desc {
@@ -4397,7 +4399,7 @@
       if (isYouTube) {
         let cleanSrc = src;
         if (!cleanSrc.includes('rel=')) {
-          cleanSrc += (cleanSrc.includes('?') ? '&' : '?') + 'rel=0&enablejsapi=1&playsinline=1';
+          cleanSrc += (cleanSrc.includes('?') ? '&' : '?') + 'rel=0&enablejsapi=1&playsinline=1&vq=hd1080';
         }
         return `<iframe src="${cleanSrc}" loading="lazy" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
       } else {
@@ -4899,25 +4901,34 @@
     })();
 
     /* ════════════════════════════════════════════
-       3D TILT & SPECULAR SHEEN INIT
+       3D TILT & ZERO-GRAVITY SPACE RELEASE INIT
        ════════════════════════════════════════════ */
     (function () {
       const cards = document.querySelectorAll('.project-card, .skill-card, .hero-card, .research-card');
       cards.forEach(card => {
         card.classList.add('tilt-card');
+
+        card.addEventListener('mouseenter', () => {
+          // Responsive tracking transition during hover
+          card.style.transition = 'transform 0.15s cubic-bezier(0.2, 0, 0.2, 1), box-shadow 0.4s ease, border-color 0.4s ease';
+        });
+
         card.addEventListener('mousemove', e => {
           const rect = card.getBoundingClientRect();
           const x = e.clientX - rect.left;
           const y = e.clientY - rect.top;
           const centerX = rect.width / 2;
           const centerY = rect.height / 2;
-          const rotateX = ((y - centerY) / centerY) * -5.0; // Balanced 5° tilt max
-          const rotateY = ((x - centerX) / centerX) * 5.0;
+          const rotateX = ((y - centerY) / centerY) * -5.5; // Balanced 5.5° tilt max
+          const rotateY = ((x - centerX) / centerX) * 5.5;
           card.style.setProperty('--mouse-x', `${x}px`);
           card.style.setProperty('--mouse-y', `${y}px`);
-          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale(1.015) translateY(-4px)`;
+          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale(1.02) translateY(-6px)`;
         });
+
         card.addEventListener('mouseleave', () => {
+          // Zero-Gravity Space Release Transition: Slow-motion weightless floating float-back into default orbit
+          card.style.transition = 'transform 1.4s cubic-bezier(0.12, 1, 0.22, 1), box-shadow 0.9s cubic-bezier(0.12, 1, 0.22, 1), border-color 0.9s ease';
           card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0px)';
         });
       });
