@@ -4397,9 +4397,9 @@
       if (isYouTube) {
         let cleanSrc = src;
         if (!cleanSrc.includes('rel=')) {
-          cleanSrc += (cleanSrc.includes('?') ? '&' : '?') + 'rel=0&enablejsapi=1';
+          cleanSrc += (cleanSrc.includes('?') ? '&' : '?') + 'rel=0&enablejsapi=1&playsinline=1';
         }
-        return `<iframe src="${cleanSrc}" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+        return `<iframe src="${cleanSrc}" loading="lazy" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
       } else {
         return `<img src="${src}" style="${isLightbox ? 'max-width:100%; max-height:85vh; border-radius:6px; box-shadow:0 10px 40px rgba(0,0,0,0.5); object-fit:contain;' : 'width:100%; display:block; cursor:zoom-in; border-radius:6px;'}" ${!isLightbox ? `onclick="openLightbox('${src}')"` : ''} alt="Project Visual">`;
       }
