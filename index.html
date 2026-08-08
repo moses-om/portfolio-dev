@@ -19,7 +19,8 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://moses-om.github.io/portfolio-dev/">
   <meta property="og:title" content="Moses Omondi — Data Intelligence & Engineering">
-  <meta property="og:description" content="Moses Omondi — Business Intelligence & Data Engineering Professional. Nairobi, Kenya.">
+  <meta property="og:description"
+    content="Moses Omondi — Business Intelligence & Data Engineering Professional. Nairobi, Kenya.">
   <meta property="og:image" content="https://moses-om.github.io/portfolio-dev/og-image.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="627">
@@ -29,7 +30,8 @@
   <meta property="twitter:card" content="summary_large_image">
   <meta property="twitter:url" content="https://moses-om.github.io/portfolio-dev/">
   <meta property="twitter:title" content="Moses Omondi — Data Intelligence & Engineering">
-  <meta property="twitter:description" content="Moses Omondi — Business Intelligence & Data Engineering Professional. Nairobi, Kenya.">
+  <meta property="twitter:description"
+    content="Moses Omondi — Business Intelligence & Data Engineering Professional. Nairobi, Kenya.">
   <meta property="twitter:image" content="https://moses-om.github.io/portfolio-dev/og-image.png">
 
   <!--
@@ -656,9 +658,19 @@
     .about-highlights {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-auto-flow: column;
+      grid-template-rows: repeat(4, auto);
       gap: 0.75rem;
       margin: 0 auto 1.5rem;
       max-width: 980px;
+    }
+
+    @media (max-width: 768px) {
+      .about-highlights {
+        grid-auto-flow: row;
+        grid-template-rows: none;
+        grid-template-columns: 1fr;
+      }
     }
 
     .highlight-item {
@@ -2932,9 +2944,6 @@
       padding: 4px 14px;
       border-radius: 999px;
       border: 1px solid rgba(255, 255, 255, 0.15);
-      pointer-events: none;
-      letter-spacing: 0.08em;
-    }
   </style>
 </head>
 
@@ -3117,19 +3126,24 @@
           My work includes architecting <strong>institutional-grade analytics dashboards</strong> for HEI i.e., Ashesi
           University, Ghana, <strong>database engineering & dashboard modelling (Excel RDBMS)</strong>, <strong>research
             design and publication</strong>, and several <strong>enterprise-grade job simulations</strong> with PwC,
-          Deloitte, and Accenture.
+          Deloitte, and Accenture. As an <strong>Applied AI Specialist</strong>, I orchestrate frontier AI models
+          (Gemini, Claude, NotebookLM, ChatGPT) for deep operational research, while utilizing vibe coding and agentic
+          tools to design and deploy intelligent analytics systems and automated workflows.
         </p>
         <p class="about-bio">
-          Systems thinking is at the core of my work.I understand the system holistically and the elements in the
-          feedback loops, then the execution becomes more deliberate. Currently securing my certifications in IBM Data
-          Engineering and Microsoft Power BI Developer &amp; Architect.
+          Systems thinking is at the core of my work. I understand the system holistically and the feedback loops within
+          it, making execution deliberate and high-impact. Currently securing certifications in IBM Data Engineering and
+          Microsoft Power BI Architecture.
         </p>
         <div class="about-highlights">
+          <!-- Left Column (Items 1-4) -->
           <div class="highlight-item">SNHU Management Degree (USA)</div>
-          <div class="highlight-item">SQL & Python data pipeline design</div>
-          <div class="highlight-item">Power BI & DAX specialist</div>
           <div class="highlight-item">Research Development & Analytics</div>
+          <div class="highlight-item">Power BI & DAX specialist</div>
           <div class="highlight-item">KoboToolbox + API integration</div>
+          <!-- Right Column (Items 5-7) -->
+          <div class="highlight-item">SQL & Python data pipeline design</div>
+          <div class="highlight-item">Applied AI & Agentic Orchestration</div>
           <div class="highlight-item">Forage job-simulations graduate</div>
         </div>
         <div class="cert-strip">
@@ -3224,6 +3238,26 @@
         <div class="skill-tools">
           <span class="skill-pill">Statistical Analysis</span><span class="skill-pill">SPSS</span><span
             class="skill-pill">A/B Testing</span><span class="skill-pill">Regression Analysis</span>
+        </div>
+      </div>
+      <div class="skill-card reveal reveal-delay-3">
+        <div class="skill-icon yellow" aria-hidden="true"
+          style="background: rgba(184, 134, 11, 0.12); color: var(--yellow-bright);">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+            <path d="M12 12L2.5 7.5" />
+            <path d="M12 12v9.5" />
+            <path d="M12 12l9.5 4.5" />
+            <circle cx="12" cy="12" r="2.5" fill="currentColor" />
+          </svg>
+        </div>
+        <div class="skill-name">Applied AI Specialist</div>
+        <div class="skill-desc">Orchestrating frontier AI models (Gemini, Claude, NotebookLM) and agentic tools to
+          design and deploy intelligent analytics systems and automated workflows.</div>
+        <div class="skill-tools">
+          <span class="skill-pill">Advanced AI Research</span><span class="skill-pill">Agentic Workflows</span><span
+            class="skill-pill">Responsible AI</span>
         </div>
       </div>
       <div class="skill-card reveal reveal-delay-1">
@@ -4982,6 +5016,10 @@
       }, 1000);
     })();
   </script>
+  <!-- Moses Local Gemini AI Assistant -->
+  <script src="http://localhost:3001/moses-chat-widget.js" defer></script>
+  <!-- Lovable AI Assistant -->
+  <script src="https://moses-ai-buddy.lovable.app/moses-assistant.js" defer></script>
 </body>
 
 </html>
