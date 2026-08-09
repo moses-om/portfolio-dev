@@ -9,3 +9,7 @@ node_modules/
 # Logs
 *.log
 npm-debug.log*
+
+# Runtime candidate cache (ephemeral data)
+data/candidate-cache.json
+

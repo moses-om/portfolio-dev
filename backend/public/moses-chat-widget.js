@@ -22,12 +22,12 @@
     #moses-local-assistant {
       position: fixed;
       bottom: 24px;
-      left: 24px;
+      right: 24px;
       z-index: 999999;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       display: flex;
       flex-direction: column;
-      align-items: flex-start;
+      align-items: flex-end;
       gap: 12px;
       pointer-events: auto;
     }
@@ -77,7 +77,7 @@
       background: #0D1B3E;
       color: #FFFFFF;
       padding: 8px 14px;
-      border-radius: 16px 16px 16px 4px;
+      border-radius: 16px 16px 4px 16px;
       font-size: 0.82rem;
       font-weight: 500;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
