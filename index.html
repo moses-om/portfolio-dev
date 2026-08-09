@@ -5016,10 +5016,20 @@
       }, 1000);
     })();
   </script>
-  <!-- Moses Local Gemini AI Assistant -->
-  <script src="http://localhost:3001/moses-chat-widget.js" defer></script>
-  <!-- Lovable AI Assistant -->
-  <script src="https://moses-ai-buddy.lovable.app/moses-assistant.js" defer></script>
+  <!-- Moses Gemini AI Assistant (Production & Local) -->
+  <script>
+    window.MOSES_AI_API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3001'
+      : 'https://moses-ai-backend.onrender.com';
+    (function() {
+      var s = document.createElement('script');
+      s.src = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:3001/moses-chat-widget.js'
+        : 'https://moses-ai-backend.onrender.com/moses-chat-widget.js';
+      s.defer = true;
+      document.head.appendChild(s);
+    })();
+  </script>
 </body>
 
 </html>

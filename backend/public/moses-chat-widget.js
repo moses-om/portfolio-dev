@@ -8,7 +8,7 @@
   // Prevent duplicate initialization
   if (document.getElementById('moses-local-assistant')) return;
 
-  const API_BASE = window.MOSES_AI_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : '');
+  const API_BASE = window.MOSES_AI_API_URL || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:3001' : 'https://moses-ai-backend.onrender.com');
   const API_ENDPOINT = `${API_BASE.replace(/\/$/, '')}/api/chat`;
   let conversationHistory = [];
 
