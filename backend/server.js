@@ -49,6 +49,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, '..')));
 
 // Handle malformed JSON request bodies gracefully
 app.use((err, req, res, next) => {
@@ -202,7 +203,12 @@ app.post('/api/chat', async (req, res) => {
             source: 'local-faq',
             matchedFaqId: matchResult.faqId,
             score: matchResult.score,
-            modelUsed: null
+            modelUsed: null,
+            presentationSignal: {
+              emotion: 'confident',
+              tone: 'professional',
+              intensity: 'subtle'
+            }
           });
         } else {
           console.log(`[Cache Miss] No FAQ matched above threshold ${DEFAULT_THRESHOLD} (Score: ${matchResult.score.toFixed(4)}).`);
@@ -227,7 +233,12 @@ app.post('/api/chat', async (req, res) => {
               source: 'candidate-cache',
               candidateId: candidateMatch.candidate.id,
               score: candidateMatch.score,
-              modelUsed: null
+              modelUsed: null,
+              presentationSignal: {
+                emotion: 'attentive',
+                tone: 'professional',
+                intensity: 'subtle'
+              }
             });
           } else {
             console.log(`[Candidate Miss] No candidate matched above threshold ${CANDIDATE_THRESHOLD} (Score: ${candidateMatch.score.toFixed(4)}). Proceeding to Gemini fallback chain...`);
@@ -326,7 +337,12 @@ app.post('/api/chat', async (req, res) => {
       success: true,
       response: responseText,
       source: 'gemini',
-      modelUsed: modelUsed
+      modelUsed: modelUsed,
+      presentationSignal: {
+        emotion: 'thoughtful',
+        tone: 'warm',
+        intensity: 'normal'
+      }
     });
 
   } catch (err) {
