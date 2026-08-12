@@ -1072,19 +1072,22 @@
     }
 
     .moses-composer-hint {
-      font-size: 0.74rem;
-      color: #A8A29E;
+      font-size: 0.84rem;
+      font-weight: 500;
+      color: #57534E;
       text-align: center;
-      padding: 0 0 8px 0;
-      line-height: 1.2;
+      padding: 0;
+      margin-bottom: 6px;
+      line-height: 1.3;
     }
 
     .moses-grounded-note {
       font-size: 0.72rem;
       color: #A8A29E;
       text-align: center;
-      margin-bottom: 6px;
-      padding: 4px 10px 0;
+      margin-top: 4px;
+      margin-bottom: 10px;
+      padding: 0 10px;
       line-height: 1.35;
     }
 
@@ -1279,8 +1282,8 @@
       </div>
 
       <div class="moses-composer-wrap">
-        <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         <div class="moses-composer-hint">Ask a simple question — or go deeper.</div>
+        <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         <form class="moses-composer" id="mosesForm">
           <input type="text" class="moses-composer-input" id="mosesInput" placeholder="Ask about a project, skill, or opportunity…" autocomplete="off" aria-label="Ask MIRA Intelligence a question" />
           <div class="moses-mic-slot" id="mosesMicSlot" aria-hidden="true"></div>
