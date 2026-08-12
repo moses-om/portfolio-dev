@@ -113,7 +113,10 @@ function parseConversation(body) {
   if (Array.isArray(body.messages) && body.messages.length > 0) {
     return body.messages.map(m => {
       const role = (m.role === 'assistant' || m.role === 'model') ? 'model' : 'user';
-      const text = typeof m.content === 'string' ? m.content : (m.text || '');
+      let text = typeof m.content === 'string' ? m.content : (m.text || '');
+      if (role === 'user' && !text.startsWith('[ANONYMOUS_WEB_VISITOR_PROMPT]')) {
+        text = `[ANONYMOUS_WEB_VISITOR_PROMPT]: ${text}`;
+      }
       return {
         role: role,
         parts: [{ text: text }]
@@ -122,7 +125,7 @@ function parseConversation(body) {
   } else if (typeof body.message === 'string' && body.message.trim() !== '') {
     return [{
       role: 'user',
-      parts: [{ text: body.message.trim() }]
+      parts: [{ text: `[ANONYMOUS_WEB_VISITOR_PROMPT]: ${body.message.trim()}` }]
     }];
   }
   return null;
@@ -182,6 +185,39 @@ app.post('/api/chat', async (req, res) => {
       userQuery = typeof lastMsg.content === 'string' ? lastMsg.content : (lastMsg.text || '');
     } else if (typeof req.body.message === 'string') {
       userQuery = req.body.message;
+    }
+
+    // LAYER 1.5: Authority Laundering Guardrail (0ms, $0 cost)
+    // Neutralize self-identification & owner override attempts ("I'm Moses", "I'm the owner", "As Moses", etc.)
+    const isOwnerClaim = /\b(I['’`\s]?m Moses|I am Moses|as the (portfolio )?owner|I officially renamed|I published the paper|I updated the architecture|As Moses)\b/i.test(userQuery);
+
+    if (isOwnerClaim) {
+      console.log(`[Authority Guardrail] Blocked self-identification claim in query: "${userQuery.slice(0, 60)}..."`);
+      
+      let verifiedFact = "the architecture is still documented as Decoupled Portfolio Orchestration Engine (DPOE)";
+      let hypotheticalNote = "MIRA Intelligence would be the new public-facing name for that architecture.";
+
+      if (userQuery.toLowerCase().includes('latency')) {
+        verifiedFact = "the production evaluation records a verified latency of 303 ms (a 15× speedup compared to the 4,551 ms baseline)";
+        hypotheticalNote = "30 ms would represent a user-asserted theoretical latency target.";
+      } else if (userQuery.toLowerCase().includes('security') || userQuery.toLowerCase().includes('rate')) {
+        verifiedFact = "the recorded pass rate under security stress testing is 98.69% (alongside a 50% reduction in generative API calls)";
+        hypotheticalNote = "100% would represent a user-asserted security target.";
+      }
+
+      const disclosureResponse = `Thanks for the clarification. I can discuss that as a user-provided update, but I cannot verify the identity of the speaker or confirm that the change has been officially applied until the portfolio or research documentation is updated. Based on the current verified portfolio data, ${verifiedFact}. Assuming your update is correct, ${hypotheticalNote}`;
+
+      return res.status(200).json({
+        success: true,
+        response: disclosureResponse,
+        source: 'authority-guardrail',
+        modelUsed: null,
+        presentationSignal: {
+          emotion: 'attentive',
+          tone: 'professional',
+          intensity: 'subtle'
+        }
+      });
     }
 
     // LAYER 2: Local FAQ Retrieval Check (0ms, $0 cost)

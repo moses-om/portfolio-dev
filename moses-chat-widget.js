@@ -645,27 +645,52 @@
       }
     }
 
-    /* ─── HEADER ─── */
+    /* ─── HEADER (ANIMATED GRADIENT & NEURAL CANVAS) ─── */
     .moses-header {
-      background: linear-gradient(145deg, #0A1428 0%, #0D1B3E 65%, #5A1525 100%);
+      background: linear-gradient(135deg, #070E1E 0%, #0D1B3E 45%, #4A0F1C 80%, #0B1936 100%);
+      background-size: 260% 260%;
+      animation: miraHeaderGradientFlow 14s ease-in-out infinite;
       padding: 16px 18px 14px;
       color: #FFFFFF;
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes miraHeaderGradientFlow {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    #miraHeaderCanvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.88;
     }
 
     .moses-header-info {
+      position: relative;
+      z-index: 1;
       display: flex;
       flex-direction: column;
+      align-items: center;
+      text-align: center;
       gap: 3px;
+      width: 100%;
     }
 
     .moses-header-name {
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 600;
       letter-spacing: -0.02em;
       color: #FFFFFF;
+      text-align: center;
     }
 
     .moses-header-meta {
@@ -673,6 +698,7 @@
       color: rgba(255, 255, 255, 0.6);
       display: flex;
       align-items: center;
+      justify-content: center;
       gap: 8px;
       font-weight: 400;
     }
@@ -697,32 +723,43 @@
       animation: mosesStatusPulse 1.2s infinite ease-in-out;
     }
 
+    .moses-status-dot.executing {
+      background: #3B82F6;
+      box-shadow: 0 0 8px rgba(59, 130, 246, 0.7);
+      animation: mosesStatusPulse 0.7s infinite ease-in-out;
+    }
+
     @keyframes mosesStatusPulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.35; }
     }
 
     .moses-close-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
       background: transparent;
       border: none;
-      color: rgba(255, 255, 255, 0.5);
-      width: 28px;
-      height: 28px;
+      color: rgba(255, 255, 255, 0.6);
+      width: 30px;
+      height: 30px;
       border-radius: 8px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 0.85rem;
-      transition: background 0.15s ease, color 0.15s ease;
+      font-size: 0.88rem;
+      transition: background 0.15s ease, color 0.15s ease, transform 0.15s ease;
       outline: none;
       flex-shrink: 0;
-      margin-top: -2px;
+      z-index: 100;
+      pointer-events: auto;
     }
 
     .moses-close-btn:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.15);
+      color: rgba(255, 255, 255, 0.95);
+      transform: scale(1.1);
     }
 
     .moses-close-btn:focus-visible {
@@ -848,21 +885,25 @@
       background: transparent;
       border: none;
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-      color: #1C1917;
+      color: #1C1917; /* Black by default */
       font-family: 'Outfit', sans-serif;
       font-size: 0.825rem;
       font-weight: 400;
       padding: 10px 10px;
       margin: 0 -6px;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
       text-align: left;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: background 0.15s ease, color 0.15s ease;
+      transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  background 0.25s ease,
+                  color 0.25s ease,
+                  padding-left 0.28s cubic-bezier(0.16, 1, 0.3, 1);
       line-height: 1.45;
       width: calc(100% + 12px);
+      position: relative;
     }
 
     .moses-discover-q:last-child {
@@ -870,31 +911,33 @@
     }
 
     .moses-discover-q:hover {
-      background: rgba(13, 27, 62, 0.03);
-      color: #6B1A2A;
+      background: rgba(107, 26, 42, 0.04); /* Subtle Maroon hover tint */
+      color: #6B1A2A; /* Maroon font on hover */
+      transform: translateX(10px);
+      padding-left: 14px;
     }
 
     .moses-discover-q:focus-visible {
       outline: 2px solid #D4A017;
       outline-offset: 2px;
-      border-radius: 6px;
+      border-radius: 8px;
     }
 
     .moses-discover-q .moses-q-arrow {
       flex-shrink: 0;
       width: 14px;
       height: 14px;
-      stroke: #A8A29E;
+      stroke: #1C1917; /* Black arrow by default */
       fill: none;
       stroke-width: 2;
       stroke-linecap: round;
       stroke-linejoin: round;
-      transition: stroke 0.15s ease, transform 0.15s ease;
+      transition: stroke 0.25s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .moses-discover-q:hover .moses-q-arrow {
-      stroke: #6B1A2A;
-      transform: translateX(2px);
+      stroke: #6B1A2A; /* Maroon arrow on hover */
+      transform: translateX(4px) scale(1.15);
     }
 
     /* ─── FOLLOW-UP CHIPS (Architecture — Phase 9A.3+) ─── */
@@ -1040,8 +1083,8 @@
       font-size: 0.72rem;
       color: #A8A29E;
       text-align: center;
-      margin-top: 14px;
-      padding: 8px 10px 2px;
+      margin-bottom: 6px;
+      padding: 4px 10px 0;
       line-height: 1.35;
     }
 
@@ -1073,8 +1116,8 @@
 
     .moses-composer-input:focus {
       background: #FFFFFF;
-      border-color: #6B1A2A;
-      box-shadow: 0 0 0 3px rgba(107, 26, 42, 0.06);
+      border-color: #0D1B3E;
+      box-shadow: 0 0 0 3px rgba(13, 27, 62, 0.08);
     }
 
     /* Microphone Slot (Phase 9B) */
@@ -1087,31 +1130,32 @@
     }
 
     .moses-send-btn {
-      background: #0D1B3E;
+      background: linear-gradient(135deg, #0D1B3E 0%, #152554 100%);
       color: #FFFFFF;
-      border: none;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
       flex-shrink: 0;
-    .moses-send-btn:hover {
-      background: #6B1A2A;
-      box-shadow: 0 2px 8px rgba(107, 26, 42, 0.25);
+      box-shadow: 0 2px 8px rgba(13, 27, 62, 0.22);
     }
 
     .moses-send-btn:hover {
-      background: #6B1A2A;
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(107, 26, 42, 0.25);
+      background: linear-gradient(135deg, #152554 0%, #1E3A72 100%);
+      color: #FFFFFF;
+      transform: translateY(-1px) scale(1.05);
+      box-shadow: 0 6px 18px rgba(13, 27, 62, 0.32);
+      border-color: rgba(212, 160, 23, 0.4);
     }
 
     .moses-send-btn:active {
-      transform: scale(0.95);
+      transform: translateY(0) scale(0.96);
+      box-shadow: 0 2px 6px rgba(13, 27, 62, 0.2);
     }
 
     .moses-send-btn:focus-visible {
@@ -1184,16 +1228,17 @@
   wrapper.id = 'moses-local-assistant';
   wrapper.innerHTML = `
     <!-- Panel -->
-    <div class="moses-panel" id="mosesPanel" role="dialog" aria-label="Moses AI Assistant" aria-modal="false">
+    <div class="moses-panel" id="mosesPanel" role="dialog" aria-label="MIRA Intelligence Assistant" aria-modal="false">
       <div class="moses-header">
+        <canvas id="miraHeaderCanvas"></canvas>
         <div class="moses-header-info">
-          <div class="moses-header-name">Moses AI</div>
+          <div class="moses-header-name">MIRA Intelligence</div>
           <div class="moses-header-meta">
             <span class="moses-status-indicator">
               <span class="moses-status-dot" id="mosesStatusDot"></span>
               <span id="mosesStatusText">Ready</span>
             </span>
-            <span>· Portfolio Assistant</span>
+            <span>&nbsp;&nbsp;·&nbsp;&nbsp;Grounded Portfolio Assistant</span>
           </div>
         </div>
         <button class="moses-close-btn" id="mosesCloseBtn" aria-label="Close assistant">
@@ -1230,14 +1275,14 @@
               What is Moses's background?
             </button>
           </div>
-          <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         </div>
       </div>
 
       <div class="moses-composer-wrap">
+        <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         <div class="moses-composer-hint">Ask a simple question — or go deeper.</div>
         <form class="moses-composer" id="mosesForm">
-          <input type="text" class="moses-composer-input" id="mosesInput" placeholder="Ask about a project, skill, or opportunity…" autocomplete="off" aria-label="Ask Moses AI a question" />
+          <input type="text" class="moses-composer-input" id="mosesInput" placeholder="Ask about a project, skill, or opportunity…" autocomplete="off" aria-label="Ask MIRA Intelligence a question" />
           <div class="moses-mic-slot" id="mosesMicSlot" aria-hidden="true"></div>
           <button type="submit" class="moses-send-btn" id="mosesSendBtn" aria-label="Send message">
             <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -1247,7 +1292,7 @@
     </div>
 
     <!-- Launcher -->
-    <button class="moses-launcher" id="mosesLauncher" aria-label="Open Moses AI Assistant" title="Moses AI">
+    <button class="moses-launcher" id="mosesLauncher" aria-label="Open MIRA Intelligence Assistant" title="MIRA Intelligence">
       <!-- Subtle Proximity Sparks Container -->
       <span class="moses-launcher-sparks" id="mosesLauncherSparks" aria-hidden="true">
         <span class="moses-launcher-spark spark-1"></span>
@@ -1287,9 +1332,15 @@
     if (state === 'thinking') {
       statusDot.className = 'moses-status-dot thinking';
       statusTxt.textContent = 'Thinking\u2026';
+      if (window.miraSetThinkingState) window.miraSetThinkingState(true);
+    } else if (state === 'executing') {
+      statusDot.className = 'moses-status-dot executing';
+      statusTxt.textContent = 'Executing\u2026';
+      if (window.miraSetThinkingState) window.miraSetThinkingState(true);
     } else {
       statusDot.className = 'moses-status-dot';
       statusTxt.textContent = 'Ready';
+      if (window.miraSetThinkingState) window.miraSetThinkingState(false);
     }
   }
 
@@ -1395,7 +1446,17 @@
       togglePanel(true);
     }, 280);
   });
-  closeBtn.addEventListener('click', (e) => { e.stopPropagation(); togglePanel(false); });
+  function handleCloseClick(e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    togglePanel(false);
+  }
+  if (closeBtn) {
+    closeBtn.addEventListener('click', handleCloseClick);
+    closeBtn.addEventListener('pointerdown', handleCloseClick);
+  }
 
   // Close on outside click
   document.addEventListener('click', (e) => {
@@ -1484,12 +1545,14 @@
 
       const data = await res.json();
       if (indicator) indicator.remove();
-      setStatus('ready');
 
       if (data.success && data.response) {
         conversationHistory.push({ role: 'assistant', content: data.response });
+        setStatus('executing');
         await typewriteResponse(data.response);
+        setStatus('ready');
       } else {
+        setStatus('ready');
         appendMsg(`<p style="color:#92400E;"><em>${escapeHtml(data.error || 'Unable to connect to backend.')}</em></p>`, 'bot');
       }
     } catch (err) {
@@ -1731,4 +1794,169 @@
 
   // Initial check on load
   checkScrollVisibility();
+
+  // ═══════════════════════════════════════════════
+  // MIRA INTELLIGENCE ANIMATED NEURAL HEADER CANVAS
+  // ═══════════════════════════════════════════════
+  (function initMiraHeaderNeuralCanvas() {
+    const canvas = document.getElementById('miraHeaderCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = 0;
+    let height = 0;
+    let particles = [];
+    let isTyping = false;
+    let isThinkingState = false;
+    let sphereAngle = 0;
+    let typingTimer = null;
+
+    window.miraSetThinkingState = function(thinking) {
+      isThinkingState = thinking;
+    };
+
+    function resizeCanvas() {
+      const parent = canvas.parentElement;
+      if (!parent) return;
+      width = parent.clientWidth || 420;
+      height = parent.clientHeight || 70;
+      canvas.width = width * window.devicePixelRatio;
+      canvas.height = height * window.devicePixelRatio;
+      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const PARTICLE_COUNT = 34;
+    const MAX_DIST = 75;
+
+    class Particle {
+      constructor(id) {
+        this.id = id;
+        this.reset();
+      }
+
+      reset() {
+        this.x = Math.random() * (width || 400);
+        this.y = Math.random() * (height || 70);
+        this.vx = (Math.random() - 0.5) * 0.45;
+        this.vy = (Math.random() - 0.5) * 0.45;
+        this.radius = Math.random() * 1.5 + 1.0;
+        this.baseAlpha = Math.random() * 0.4 + 0.45;
+        this.alpha = this.baseAlpha;
+        const colors = ['#FFFFFF', '#D4A017', '#818CF8', '#F472B6', '#E2E8F0'];
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+      }
+
+      update() {
+        if (isThinkingState) {
+          // AI THINKING: Form a tight neural ball and revolve fast
+          sphereAngle += 0.005;
+          const centerX = width / 2;
+          const centerY = height / 2;
+
+          const ringRadius = 22 + (this.id % 5) * 6.5;
+          const particleAngle = sphereAngle * 18 + (this.id * (Math.PI * 2 / PARTICLE_COUNT));
+
+          const targetX = centerX + Math.cos(particleAngle) * ringRadius;
+          const targetY = centerY + Math.sin(particleAngle) * (ringRadius * 0.65);
+
+          this.x += (targetX - this.x) * 0.25;
+          this.y += (targetY - this.y) * 0.25;
+          this.alpha = 0.95;
+        } else if (isTyping) {
+          // KEYBOARD TYPING: Gravitate towards center point (width/2, height/2)
+          const targetX = width / 2;
+          const targetY = height / 2;
+          const dx = targetX - this.x;
+          const dy = targetY - this.y;
+          const dist = Math.hypot(dx, dy);
+
+          if (dist > 12) {
+            this.vx += (dx / dist) * 0.12;
+            this.vy += (dy / dist) * 0.12;
+            this.vx *= 0.88;
+            this.vy *= 0.88;
+          } else {
+            this.vx = -dy * 0.05;
+            this.vy = dx * 0.05;
+          }
+          this.alpha = Math.min(1.0, this.baseAlpha + 0.4);
+        } else {
+          // IDLE / DISPERSED: Ambient drift & gentle bounce
+          this.vx *= 0.98;
+          this.vy *= 0.98;
+          if (Math.abs(this.vx) < 0.15) this.vx += (Math.random() - 0.5) * 0.1;
+          if (Math.abs(this.vy) < 0.15) this.vy += (Math.random() - 0.5) * 0.1;
+
+          this.alpha = this.baseAlpha;
+
+          if (this.x < 0 || this.x > width) this.vx *= -1;
+          if (this.y < 0 || this.y > height) this.vy *= -1;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.globalAlpha = this.alpha;
+        ctx.shadowColor = this.color;
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = 1.0;
+      }
+    }
+
+    for (let i = 0; i < PARTICLE_COUNT; i++) {
+      particles.push(new Particle(i));
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+
+      for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.hypot(dx, dy);
+          const maxDist = isThinkingState ? 60 : (isTyping ? 95 : MAX_DIST);
+
+          if (dist < maxDist) {
+            const lineAlpha = (1 - dist / maxDist) * (isThinkingState ? 0.65 : (isTyping ? 0.45 : 0.24));
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = isThinkingState ? 'rgba(255, 215, 0, ' + lineAlpha + ')' : (isTyping ? 'rgba(212, 160, 23, ' + lineAlpha + ')' : 'rgba(255, 255, 255, ' + lineAlpha + ')');
+            ctx.lineWidth = isThinkingState ? 1.4 : (isTyping ? 1.2 : 0.8);
+            ctx.stroke();
+          }
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    const inputEl = document.getElementById('mosesInput');
+    if (inputEl) {
+      inputEl.addEventListener('input', () => {
+        isTyping = true;
+        if (typingTimer) clearTimeout(typingTimer);
+        typingTimer = setTimeout(() => {
+          isTyping = false;
+        }, 850);
+      });
+    }
+  })();
 })();
