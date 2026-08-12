@@ -1,0 +1,20 @@
+{
+  "name": "moses-assistant-backend",
+  "version": "1.0.0",
+  "description": "Local test backend proof-of-concept for Moses AI Assistant using Google Gemini SDK",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@google/genai": "latest",
+    "@google/generative-ai": "^0.22.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

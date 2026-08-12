@@ -1,0 +1,117 @@
+[
+  {
+    "id": "identity-overview",
+    "category": "identity",
+    "questions": [
+      "What does Moses do?",
+      "Who is Moses Otieno Omondi?",
+      "What is Moses's background?",
+      "Tell me about Moses."
+    ],
+    "answer": "Moses Otieno Omondi is a Business Intelligence and Data Engineering Professional based in Nairobi, Kenya. He specializes in building end-to-end data pipelines, custom SQL schemas, automated ETL workflows, and interactive Power BI dashboards that help organizations translate complex data into strategic intelligence.",
+    "source": "portfolio.identity.headline, portfolio.identity.tagline, portfolio.identity.location",
+    "anchor": "#about",
+    "verified": true
+  },
+  {
+    "id": "power-bi-experience",
+    "category": "bi",
+    "questions": [
+      "Does Moses have Power BI experience?",
+      "Has Moses worked with Power BI?",
+      "Does he know Power BI?",
+      "Has he built dashboards using Power BI?",
+      "What Power BI skills does Moses have?",
+      "What BI tools does Moses know?"
+    ],
+    "answer": "Yes, Power BI is a core competency. In his consulting engagement for Ashesi University and The Education Collaborative, Moses delivered a live Institutional Ranking System on Power BI Service. His expertise includes connecting Power BI to REST APIs (KoboToolbox), modeling relational data, implementing Row-Level Security (RLS), and writing advanced DAX measures (RANKX, time intelligence, dynamic KPI scoring).",
+    "source": "portfolio.skills.businessIntelligence, portfolio.workExperience[0], portfolio.projects[0]",
+    "anchor": "#projects",
+    "verified": true
+  },
+  {
+    "id": "educational-background",
+    "category": "education",
+    "questions": [
+      "What is Moses's educational background?",
+      "Where did Moses study?",
+      "What degree does Moses have?",
+      "Did Moses graduate from SNHU?"
+    ],
+    "answer": "Moses holds a US-accredited Bachelor of Arts in Management with a specialization in Logistics & Operations from Southern New Hampshire University (SNHU) (2020–2023), completed via Kepler in Kigali, Rwanda. His degree covered strategic management, operations, project management, and parallel coursework in data analytics and Business Intelligence.",
+    "source": "portfolio.education[0]",
+    "anchor": "#experience",
+    "verified": true
+  },
+  {
+    "id": "data-engineering-sql",
+    "category": "data-engineering",
+    "questions": [
+      "What data engineering experience does Moses have?",
+      "Does Moses know SQL?",
+      "What database skills does he have?",
+      "Does Moses build ETL pipelines?"
+    ],
+    "answer": "Moses designs relational database schemas (MySQL, RDBMS), automated ETL pipelines, and data cleaning workflows using SQL and Python (Pandas, BeautifulSoup). He built an Excel RDBMS dashboard for The Education Collaborative that reduced reporting time by ~80%, and is currently completing the IBM Data Engineering Professional Certificate.",
+    "source": "portfolio.skills.dataEngineering, portfolio.workExperience[1], portfolio.certifications[0]",
+    "anchor": "#skills",
+    "verified": true
+  },
+  {
+    "id": "ashesi-work-experience",
+    "category": "experience",
+    "questions": [
+      "What is Moses's current role?",
+      "Tell me about his work at Ashesi University.",
+      "What did Moses do for The Education Collaborative?",
+      "What work experience does Moses have?"
+    ],
+    "answer": "Moses serves as a Power BI Developer & Business Intelligence Consultant for Ashesi University and The Education Collaborative (Jul 2025 – Present). He previously worked as a Data & Research Analyst Intern for The Education Collaborative in Kigali, Rwanda, and as a Teaching Assistant for Kepler College's ITEME Refugee Programme in Nyabiheke Refugee Camp.",
+    "source": "portfolio.workExperience[0], portfolio.workExperience[1], portfolio.workExperience[2]",
+    "anchor": "#experience",
+    "verified": true
+  },
+  {
+    "id": "research-publications",
+    "category": "research",
+    "questions": [
+      "Does Moses have research experience?",
+      "What research publications has Moses authored?",
+      "Has Moses published any papers?",
+      "Where can I read Moses's research?",
+      "Tell me about his research publications."
+    ],
+    "answer": "Yes. Moses has authored several published case studies and articles, including a 2025 higher education case study published on ResearchGate analyzing student learning outcomes (Kepler College), a 2023 healthcare reimbursement study published on SSRN (Spaulding Rehabilitation Network), and a logistics optimization paper on intermodal transport for Africa Global Logistics.",
+    "source": "portfolio.research[0], portfolio.research[1], portfolio.research[2]",
+    "anchor": "#research",
+    "verified": true
+  },
+  {
+    "id": "forage-virtual-simulations",
+    "category": "simulations",
+    "questions": [
+      "Has Moses worked with PwC or Deloitte?",
+      "What are Moses's Forage simulations?",
+      "Tell me about his PwC Power BI project.",
+      "Has Moses completed virtual job simulations?"
+    ],
+    "answer": "Moses has completed multiple verified Virtual Experience Job Simulations via Forage, including a Power BI HR analytics simulation with PwC Switzerland, a data analytics and forensic technology simulation with Deloitte Australia, and a data visualization project with Accenture North America. He is also currently completing simulations with British Airways (Data Science) and Tata iQ.",
+    "source": "portfolio.certifications[3..5], portfolio.projects[3..7]",
+    "anchor": "#projects",
+    "verified": true
+  },
+  {
+    "id": "applied-ai-toolstack",
+    "category": "skills",
+    "questions": [
+      "What AI tools does Moses use?",
+      "Does Moses have experience with Applied AI?",
+      "What tools are in Moses's technical stack?",
+      "What software does Moses use for data analytics?"
+    ],
+    "answer": "Moses's technical stack includes Power BI, SQL, MySQL, Python (Pandas, BeautifulSoup), SPSS, and Excel/VBA. As an Applied AI Specialist, he orchestrates frontier AI models (Gemini, Claude, ChatGPT, NotebookLM) and prompt engineering workflows to build intelligent analytics tools and automated data systems.",
+    "source": "portfolio.skills.appliedAI, portfolio.skills.businessIntelligence, portfolio.skills.dataEngineering",
+    "anchor": "#skills",
+    "verified": true
+  }
+]
