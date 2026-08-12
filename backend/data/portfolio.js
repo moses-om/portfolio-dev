@@ -199,6 +199,16 @@ const portfolioData = {
       impact: ["Demonstrated human-centered social impact design for institutional challenges"]
     },
     {
+      id: "chatporter",
+      name: "ChatGPT Chat Porter & Multi-Format Extractor",
+      category: "Development & Privacy Data Tooling",
+      filterTag: "dev",
+      stack: ["JavaScript (ES6+)", "Browser Privacy", "JSON Schema Parsing", "Markdown / PDF / JSON / TXT Export"],
+      problem: "Saving long AI conversations often fails via shared links, while third-party export websites require uploading private text to unknown servers, risking data leaks of proprietary code and notes.",
+      solution: "Engineered a privacy-first web application that runs 100% locally in the browser to convert raw ChatGPT export files into clean Markdown, PDF, JSON, and text documents in seconds with zero data leaving the device.",
+      impact: ["1-Click export to Markdown, PDF, JSON, and TXT with full code syntax preservation", "100% private client-side data pipeline for research papers and AI development logs"]
+    },
+    {
       id: "pwc",
       name: "PwC Switzerland — Power BI Simulation",
       category: "Job Simulation",
@@ -246,6 +256,14 @@ const portfolioData = {
   ],
 
   research: [
+    {
+      id: "dpoe-paper",
+      title: "Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI",
+      year: "2026",
+      type: "Upcoming Paper · AI Systems & Architecture",
+      status: "Under Compilation",
+      summary: "Presents the Decoupled Portfolio Orchestration Engine (DPOE) — a zero-cost, 4-tier conversational AI architecture ($0.00 budget). Production evaluations show a 50% reduction in generative API calls, 15× faster latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing."
+    },
     {
       id: "kepler-paper",
       title: "Relationship Analysis of Professional Competencies & Student Learning Outcomes — Kepler College",

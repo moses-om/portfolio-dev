@@ -15,6 +15,14 @@
   <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png">
   <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 
+  <!-- YouTube Video Playback Preconnect Optimization -->
+  <link rel="preconnect" href="https://www.youtube-nocookie.com">
+  <link rel="preconnect" href="https://www.youtube.com">
+  <link rel="preconnect" href="https://i.ytimg.com">
+  <link rel="dns-prefetch" href="https://www.youtube-nocookie.com">
+  <link rel="dns-prefetch" href="https://www.youtube.com">
+  <link rel="dns-prefetch" href="https://i.ytimg.com">
+
   <!-- Open Graph / LinkedIn Social Share Metadata -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://moses-om.github.io/portfolio-dev/">
@@ -936,10 +944,14 @@
       border: 1px solid rgba(0, 0, 0, 0.08);
       border-radius: 20px;
       overflow: hidden;
-      transition: var(--transition);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease, border-color 0.3s ease;
       cursor: pointer;
       position: relative;
       box-shadow: 0 8px 24px rgba(10, 16, 32, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04);
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     .project-card:hover {
@@ -975,6 +987,8 @@
       justify-content: center;
       padding: 1.2rem;
       pointer-events: none;
+      will-change: transform;
+      transform: translateZ(0);
     }
 
     .thumb-illustration svg {
@@ -983,6 +997,8 @@
       opacity: 0.72;
       filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18));
       transition: opacity 0.35s ease;
+      will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
     .project-card:hover .thumb-illustration svg {
@@ -1208,6 +1224,8 @@
       animation-play-state: paused;
       transition: opacity 0.4s ease, filter 0.4s ease;
       filter: drop-shadow(0 0 3px currentColor);
+      will-change: transform, opacity;
+      transform: translateZ(0);
     }
 
     .project-card:hover .svg-moving-dot {
@@ -1532,23 +1550,62 @@
       background: var(--page-bg);
       border-radius: 12px;
       overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      will-change: max-width, width, max-height, transform;
       box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
 
       /* FLIP Morphing Drop-Back Transform to Source Card */
       transform: translate(var(--card-dx, 0px), var(--card-dy, 24px)) scale(0.25);
       opacity: 0;
       transform-origin: center center;
-      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1);
-
-      /* CRITICAL FIX FOR CORNER BLEEDING BUG */
-      clip-path: inset(0 round 12px);
-      -webkit-clip-path: inset(0 round 12px);
+      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.48s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.48s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-height 0.48s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.48s cubic-bezier(0.16, 1, 0.3, 1);
       isolation: isolate;
     }
 
     .modal-overlay.open .modal-drawer {
       transform: translate(0, 0) scale(1);
       opacity: 1;
+    }
+
+    .modal-drawer.video-expanded {
+      max-width: 1280px !important;
+      width: 92vw !important;
+      max-height: 94vh !important;
+      box-shadow: 0 44px 110px rgba(0, 0, 0, 0.65), 0 0 50px rgba(107, 26, 42, 0.25) !important;
+      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-height 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Staggered Video Playback Area Fitting (Whole window expands/shrinks first, video follows) */
+    .modal-media-wrapper {
+      position: relative;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 200px;
+      transition: border-radius 0.45s ease,
+                  box-shadow 0.45s ease;
+    }
+
+    .modal-media-wrapper.media-expanded {
+      box-shadow: 0 18px 54px rgba(0, 0, 0, 0.5), 0 0 30px rgba(107, 26, 42, 0.2);
+      border-radius: 8px;
+      transition: border-radius 0.65s ease,
+                  box-shadow 0.65s ease;
     }
 
     .modal-drawer::-webkit-scrollbar {
@@ -1582,6 +1639,8 @@
       backdrop-filter: blur(12px);
       -webkit-backdrop-filter: blur(12px);
       z-index: 10;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
     }
 
     .modal-close {
@@ -2151,7 +2210,7 @@
       letter-spacing: 0.1em;
       text-transform: uppercase;
       margin-bottom: 0.6rem;
-      text-align: center;
+      text-align: left;
     }
 
     .research-title {
@@ -2160,7 +2219,7 @@
       color: var(--text-primary);
       margin-bottom: 0.6rem;
       line-height: 1.35;
-      text-align: center;
+      text-align: left;
     }
 
     .research-desc {
@@ -2822,13 +2881,70 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      transition: background 0.2s;
+      transition: opacity 0.35s ease, background 0.2s ease, transform 0.2s ease;
       font-size: 1rem;
       z-index: 5;
     }
 
     .carousel-nav:hover {
       background: var(--maroon);
+    }
+
+    /* Hide Carousel Nav Arrows During Video Playback by Default */
+    .modal-media-wrapper.is-video-playing .carousel-nav {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.35s ease, background 0.2s ease, transform 0.2s ease !important;
+    }
+
+    /* Reveal Navigation Arrows ONLY when mouse is actively moved */
+    .modal-media-wrapper.is-video-playing.mouse-active .carousel-nav {
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+
+    /* Lightbox 2-Stage Staggered Video Expansion */
+    .lightbox-media-wrapper {
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .lightbox-media-wrapper.lightbox-video-expanded {
+      max-width: 98vw !important;
+      width: 98vw !important;
+    }
+
+    iframe#ytLightboxIframe {
+      transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-height 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                  transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    iframe#ytLightboxIframe.lightbox-iframe-expanded {
+      width: 98vw !important;
+      max-width: 98vw !important;
+      max-height: 94vh !important;
+      transform: scale(1.015);
+      box-shadow: 0 24px 70px rgba(0, 0, 0, 0.7), 0 0 40px rgba(107, 26, 42, 0.3) !important;
+    }
+
+    .lightbox-media-wrapper.is-video-playing .lightbox-nav,
+    .lightbox-media-wrapper.is-video-playing .lightbox-counter,
+    #lightboxOverlay.is-video-playing .lightbox-nav,
+    #lightboxOverlay.is-video-playing .lightbox-counter {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      transition: opacity 0.35s ease, transform 0.2s ease !important;
+    }
+
+    .lightbox-media-wrapper.is-video-playing.mouse-active .lightbox-nav,
+    .lightbox-media-wrapper.is-video-playing.mouse-active .lightbox-counter,
+    #lightboxOverlay.is-video-playing.mouse-active .lightbox-nav,
+    #lightboxOverlay.is-video-playing.mouse-active .lightbox-counter {
+      opacity: 1 !important;
+      pointer-events: auto !important;
     }
 
     .carousel-nav.left {
@@ -3109,7 +3225,7 @@
         ═══════════════════════════════════════════ -->
           <img src="moses.jpg" alt="Moses Otieno Omondi" class="avatar-photo" id="avatarPhoto">
           <div class="avatar-badge">📍 Nairobi, KE</div>
-          <div class="avatar-pop" id="avatarPop">Hi, all good?</div>
+          <div class="avatar-pop" id="avatarPop">Hello, pleasure you're here</div>
         </div>
       </div>
       <div class="about-content reveal reveal-delay-1">
@@ -3256,7 +3372,7 @@
         <div class="skill-desc">Orchestrating frontier AI models (Gemini, Claude, NotebookLM) and agentic tools to
           design and deploy intelligent analytics systems and automated workflows.</div>
         <div class="skill-tools">
-          <span class="skill-pill">Advanced AI Research</span><span class="skill-pill">Agentic Workflows</span><span
+          <span class="skill-pill">AI Engineering</span><span class="skill-pill">Advanced AI Research</span><span class="skill-pill">Agentic Workflows</span><span
             class="skill-pill">Responsible AI</span>
         </div>
       </div>
@@ -3279,6 +3395,10 @@
         </div>
       </div>
       <div class="skill-card reveal reveal-delay-2">
+        <div
+          style="position:absolute; top:1.25rem; right:1.25rem; font-family:'DM Mono', monospace; font-size:0.68rem; color:var(--maroon); display:inline-flex; align-items:center; gap:0.35rem; background:rgba(107,26,42,0.06); padding:0.25rem 0.65rem; border-radius:999px; border:1px solid rgba(107,26,42,0.18); font-weight:500; z-index:2;">
+          ⏳ In Progress
+        </div>
         <div class="skill-icon navy" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
             stroke-linejoin="round">
@@ -3296,10 +3416,6 @@
           <span class="skill-pill">SQL &amp; RDBMS</span><span class="skill-pill">Python</span><span
             class="skill-pill">ETL Pipelines</span><span class="skill-pill">Pandas</span><span class="skill-pill">Apache
             Airflow</span>
-        </div>
-        <div
-          style="margin-top:0.75rem; font-family:'DM Mono', monospace; font-size:0.68rem; color:var(--maroon); display:inline-flex; align-items:center; gap:0.35rem; background:rgba(107,26,42,0.06); padding:0.25rem 0.65rem; border-radius:999px; border:1px solid rgba(107,26,42,0.18); font-weight:500; align-self:flex-start;">
-          ⏳ In Progress
         </div>
       </div>
     </div>
@@ -3484,6 +3600,47 @@
             <button class="project-link"
               onclick="event.stopPropagation();window.open('https://sites.google.com/view/moo-digital-portfolio/home','_blank','noopener,noreferrer')">Open
               →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4: ChatGPT Chat Porter & Multi-Format Extractor -->
+      <div class="project-card reveal reveal-delay-1" data-cat="dev"
+        style="--badge-hover: rgba(13, 27, 62, 0.92); --badge-shadow: rgba(212, 160, 23, 0.45);"
+        onclick="openProject('chatporter', event)">
+        <div class="project-thumb">
+          <div class="thumb-bg" style="background:linear-gradient(135deg, #071024 0%, #0D1B3E 50%, #1F0712 100%);">
+          </div>
+          <div class="thumb-illustration" aria-hidden="true">
+            <svg viewBox="0 0 320 220" role="img">
+              <rect class="svg-outer-frame" x="40" y="38" width="240" height="144" rx="16" fill="rgba(255,255,255,0.05)"
+                stroke="rgba(212,160,23,0.4)" stroke-width="1.5" />
+              <rect x="70" y="62" width="70" height="96" rx="8" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+              <line x1="84" y1="80" x2="126" y2="80" stroke="rgba(212,160,23,0.9)" stroke-width="3" stroke-linecap="round" />
+              <line x1="84" y1="96" x2="120" y2="96" stroke="rgba(255,255,255,0.7)" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="84" y1="112" x2="114" y2="112" stroke="rgba(255,255,255,0.5)" stroke-width="2.5" stroke-linecap="round" />
+              <line x1="84" y1="128" x2="124" y2="128" stroke="rgba(212,160,23,0.8)" stroke-width="2.5" stroke-linecap="round" />
+              <path d="M160 110 H210 M194 96 L212 110 L194 124" stroke="rgba(212,160,23,0.95)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+              <rect x="220" y="74" width="56" height="24" rx="6" fill="rgba(212,160,23,0.2)" stroke="rgba(212,160,23,0.7)" stroke-width="1" />
+              <text x="248" y="90" fill="#FFD700" font-family="DM Mono, monospace" font-size="11" font-weight="bold" text-anchor="middle">.MD</text>
+              <rect x="220" y="106" width="56" height="24" rx="6" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.4)" stroke-width="1" />
+              <text x="248" y="122" fill="#FFFFFF" font-family="DM Mono, monospace" font-size="11" font-weight="bold" text-anchor="middle">JSON</text>
+              <rect x="220" y="138" width="56" height="24" rx="6" fill="rgba(255,255,255,0.08)" stroke="rgba(255,255,255,0.3)" stroke-width="1" />
+              <text x="248" y="154" fill="#CCCCCC" font-family="DM Mono, monospace" font-size="11" font-weight="bold" text-anchor="middle">PDF</text>
+            </svg>
+          </div>
+          <div class="project-thumb-overlay">
+            <div class="thumb-view-btn">View Tool Details</div>
+          </div>
+          <div class="thumb-label">⚡ Privacy-First Data Tooling</div>
+        </div>
+        <div class="project-body">
+          <div class="project-tags"><span class="ptag dev">Privacy Tooling</span><span class="ptag dev">Data Pipeline</span></div>
+          <div class="project-name">ChatGPT Chat Porter &amp; Multi-Format Extractor</div>
+          <div class="project-desc">A privacy-first web utility that instantly converts ChatGPT conversations into clean Markdown, PDF, JSON, and text — keeping 100% of your data private on your own device.</div>
+          <div class="project-footer">
+            <div class="project-stack"><span class="stack-pill">ES6+ JS</span><span class="stack-pill">Browser Privacy</span><span class="stack-pill">JSON Parser</span><span class="stack-pill">Markdown/PDF</span></div>
+            <button class="project-link" onclick="event.stopPropagation();openProject('chatporter', event)">View →</button>
           </div>
         </div>
       </div>
@@ -3778,7 +3935,22 @@
       Learning Institutions, Logistics firm to intriguing reads.</p>
     <div class="research-grid">
 
+      <!-- Card 1: DPOE Upcoming Paper -->
       <div class="research-card reveal"
+        onclick="openPDF('dpoe-paper','Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI','#', event)">
+        <div class="research-type">Upcoming Paper · AI Systems &amp; Architecture</div>
+        <div class="research-title">Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI</div>
+        <div class="research-desc">Presents the design, implementation, and empirical evaluation of the Decoupled Portfolio Orchestration Engine (DPOE) — a lightweight, zero-cost, multi-layer retrieval architecture designed for cost-efficient, grounded conversational AI.</div>
+        <div class="research-rationale">Rationale: Demonstrates how a 4-tier zero-cost pipeline and HITL CLI governance cut generative API calls by 50%, boost latency by 15× (303 ms vs 4.5 s), and maintain a 98.69% security pass rate.</div>
+        <div class="research-meta">
+          <span>2026 · Conversational AI &amp; Systems</span>
+          <div class="research-status">
+            <div class="status-dot" style="background:#D4A017"></div> Under Compilation
+          </div>
+        </div>
+      </div>
+
+      <div class="research-card reveal reveal-delay-1"
         onclick="openPDF('kepler-paper','Relationship Analysis of Professional Competencies & Student Learning Outcomes — Kepler College','https://www.researchgate.net/publication/400579227_Relationship_Analysis_of_Professional_Competencies_Student_Learning_Outcomes_-A_Case_Study_of_Kepler_College', event)">
         <div class="research-type">Case Study · Higher Education Research</div>
         <div class="research-title">Relationship Analysis of Professional Competencies & Student Learning Outcomes —
@@ -3852,7 +4024,7 @@
 
       <div class="research-card reveal"
         onclick="openPDF('mayhem-market','Mayhem at the Market','https://drive.google.com/file/d/1dcuhpH3fnYWYGpKZTxDVBLKxVhAkvuD5/view?usp=sharing', event)">
-        <div class="research-type">Article · Political Analysis</div>
+        <div class="research-type">Article · Political Caricature</div>
         <div class="research-title">Mayhem at the Market</div>
         <div class="research-desc">A political odyssey exploring market unrest, power dynamics, and civic accountability
           amid economic upheaval.</div>
@@ -4325,7 +4497,7 @@
         images: [
           'kobo1.png',
           'kobo2.png',
-          'https://www.youtube.com/embed/TCaPj0r1qo4?si=cxk2RNZPvKU2cr0E'
+          'https://www.youtube.com/embed/TCaPj0r1qo4'
         ],
         link: null
       },
@@ -4343,7 +4515,7 @@
           'eahub_1.png',
           'eahub_2.png',
           'eahub_3.png',
-          'https://www.youtube.com/embed/Q8Ah-Wd8lno?si=tVlwM-HzTnW8HAT1'
+          'https://www.youtube.com/embed/Q8Ah-Wd8lno'
         ],
         link: null
       },
@@ -4420,22 +4592,319 @@
         images: ['kepler-meal.png'],
         link: 'https://sites.google.com/view/moo-digital-portfolio/home'
       },
+      chatporter: {
+        type: 'Development · Privacy Data Pipeline & Tooling',
+        title: 'ChatGPT Chat Porter & Multi-Format Extractor',
+        bg: 'linear-gradient(135deg,#071024 0%,#0D1B3E 50%,#1F0712 100%)',
+        label: '⚡ 100% Local Browser Parser · Markdown / PDF / JSON / TXT',
+        problem: 'While compiling technical notes and engineering logs for an academic research paper, I hit two major roadblocks. First, shared web links often fail to load properly when saving long AI conversations. Second — and most importantly — online chat export tools require uploading text to third-party servers, posing a serious privacy risk when handling proprietary code, system designs, or confidential notes.',
+        solution: 'I engineered a privacy-first web application that runs 100% inside your web browser. Instead of sending sensitive data over the internet, the tool processes ChatGPT export files locally on your computer. It parses raw conversation data and formats it into polished documents in seconds — ensuring complete privacy with zero data leakage.',
+        impact: [
+          '1-Click Multi-Format Export: Converts long AI chats into clean Markdown (.md), PDF, JSON, and plain text (.txt) instantly',
+          'Preserves Code & Formatting: Maintains syntax highlighting, code blocks, and headings without manual cleanup',
+          '100% Private & Offline: Runs entirely in the browser — no data ever leaves your computer',
+          'Eliminates Friction: Replaced hours of manual copy-pasting with a seamless 5-second export workflow for research papers & AI pipelines'
+        ],
+        stats: [{ val: '100%', label: 'Private (Runs Local)' }, { val: '4 Formats', label: 'MD, PDF, JSON & TXT' }],
+        tech: ['JavaScript (ES6+)', 'Client-Side Privacy', 'JSON Data Parsing', 'Markdown & PDF Export', 'Data Pipeline Automation'],
+        link: null
+      },
     };
 
     /* ════════════════════════════════════════════
+       YOUTUBE 1:30 PLAYBACK MODAL EXPANSION LOGIC
+       ════════════════════════════════════════════ */
+    (function () {
+      let videoTimer = null;
+      let isVideoPlaying = false;
+      let hasBeenPaused = false;
+
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(tag);
+      }
+
+      let stageTimer = null;
+
+      function ensureVideoInView() {
+        const drawer = document.getElementById('modalDrawer');
+        if (!drawer) return;
+        const mediaWrapper = drawer.querySelector('.modal-media-wrapper') || document.getElementById('ytProjectIframe') || document.getElementById('carouselMediaContainer');
+        if (mediaWrapper) {
+          const drawerRect = drawer.getBoundingClientRect();
+          const wrapperRect = mediaWrapper.getBoundingClientRect();
+          const targetScroll = drawer.scrollTop + (wrapperRect.top - drawerRect.top) - 130;
+          drawer.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+        }
+      }
+
+      function setVideoHDQuality() {
+        if (ytPlayerInstance && ytPlayerInstance.setPlaybackQuality) {
+          try {
+            ytPlayerInstance.setPlaybackQuality('hd1080');
+          } catch (e) { }
+        }
+
+        const iframe = document.getElementById('ytProjectIframe') || document.getElementById('ytLightboxIframe');
+        if (iframe && iframe.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'setPlaybackQuality',
+              args: ['hd1080']
+            }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'setPlaybackQualityRange',
+              args: ['hd1080', 'highres']
+            }), '*');
+          } catch (e) { }
+        }
+      }
+
+      function expandVideoExpansion() {
+        const drawer = document.getElementById('modalDrawer');
+        if (!drawer || !isVideoPlaying) return;
+
+        if (stageTimer) clearTimeout(stageTimer);
+
+        // Stage 1: Floating window expands first in place
+        drawer.classList.add('video-expanded');
+
+        // Stage 2: Video playback area expands ONLY AFTER floating window finishes expanding (580ms)
+        stageTimer = setTimeout(() => {
+          if (isVideoPlaying && drawer.classList.contains('video-expanded')) {
+            const mediaWrapper = drawer.querySelector('.modal-media-wrapper');
+            if (mediaWrapper) {
+              mediaWrapper.classList.add('media-expanded');
+            }
+
+            // Programmatically request HD 1080p stream upon window expansion
+            setVideoHDQuality();
+            setTimeout(setVideoHDQuality, 300);
+            setTimeout(setVideoHDQuality, 750);
+
+            ensureVideoInView();
+            setTimeout(ensureVideoInView, 350);
+          }
+        }, 580);
+      }
+
+      function collapseVideoExpansion() {
+        if (stageTimer) clearTimeout(stageTimer);
+
+        const drawer = document.getElementById('modalDrawer');
+        if (!drawer) return;
+
+        // Stage 1: Floating window shrinks back first
+        drawer.classList.remove('video-expanded');
+
+        // Stage 2: Video playback area shrinks back ONLY AFTER floating window finishes shrinking (480ms)
+        stageTimer = setTimeout(() => {
+          const mediaWrapper = drawer.querySelector('.modal-media-wrapper');
+          if (mediaWrapper) {
+            mediaWrapper.classList.remove('media-expanded');
+          }
+        }, 480);
+      }
+
+      let mouseHideTimer = null;
+
+      function onMediaMouseMove() {
+        const drawer = document.getElementById('modalDrawer');
+        if (!drawer) return;
+        const mediaWrapper = drawer.querySelector('.modal-media-wrapper');
+        if (mediaWrapper && mediaWrapper.classList.contains('is-video-playing')) {
+          mediaWrapper.classList.add('mouse-active');
+
+          if (mouseHideTimer) clearTimeout(mouseHideTimer);
+          mouseHideTimer = setTimeout(() => {
+            if (mediaWrapper) mediaWrapper.classList.remove('mouse-active');
+          }, 2500);
+        }
+      }
+
+      let ytPlayerInstance = null;
+      let ytCheckInterval = null;
+
+      function checkRemainingTime(dur, cur) {
+        if (dur && cur && dur > 0 && cur > 0) {
+          const rem = dur - cur;
+          if (rem <= 8.2 && rem > 0) {
+            collapseVideoExpansion();
+          }
+        }
+      }
+
+      function startVideoEndCheck() {
+        if (ytCheckInterval) clearInterval(ytCheckInterval);
+        ytCheckInterval = setInterval(() => {
+          if (ytPlayerInstance && ytPlayerInstance.getCurrentTime && ytPlayerInstance.getDuration) {
+            try {
+              checkRemainingTime(ytPlayerInstance.getDuration(), ytPlayerInstance.getCurrentTime());
+            } catch (e) { }
+          }
+        }, 300);
+      }
+
+      function stopVideoEndCheck() {
+        if (ytCheckInterval) {
+          clearInterval(ytCheckInterval);
+          ytCheckInterval = null;
+        }
+      }
+
+      function handleVideoPlay() {
+        isVideoPlaying = true;
+
+        const drawer = document.getElementById('modalDrawer');
+        if (drawer) {
+          const mediaWrapper = drawer.querySelector('.modal-media-wrapper');
+          if (mediaWrapper) {
+            mediaWrapper.classList.add('is-video-playing');
+            mediaWrapper.classList.remove('mouse-active');
+          }
+        }
+
+        document.removeEventListener('mousemove', onMediaMouseMove);
+        document.addEventListener('mousemove', onMediaMouseMove);
+
+        // Immediately request HD 1080p stream as soon as playback starts
+        setVideoHDQuality('hd1080');
+        setTimeout(() => setVideoHDQuality('hd1080'), 250);
+
+        startVideoEndCheck();
+
+        // Prevent restarting the 14s timer if it is ALREADY running or drawer is ALREADY expanded!
+        if (videoTimer || (drawer && drawer.classList.contains('video-expanded'))) {
+          return;
+        }
+
+        // Wait exactly 14 seconds from playback start before expanding
+        videoTimer = setTimeout(() => {
+          if (isVideoPlaying) {
+            expandVideoExpansion();
+          }
+          videoTimer = null;
+        }, 14000);
+      }
+
+      function handleVideoPauseOrStop(forceCollapse = false) {
+        if (isVideoPlaying) {
+          hasBeenPaused = true;
+        }
+        isVideoPlaying = false;
+
+        if (mouseHideTimer) {
+          clearTimeout(mouseHideTimer);
+          mouseHideTimer = null;
+        }
+
+        document.removeEventListener('mousemove', onMediaMouseMove);
+
+        const drawer = document.getElementById('modalDrawer');
+        if (drawer) {
+          const mediaWrapper = drawer.querySelector('.modal-media-wrapper');
+          if (mediaWrapper) {
+            mediaWrapper.classList.remove('is-video-playing', 'mouse-active');
+          }
+        }
+
+        if (videoTimer) {
+          clearTimeout(videoTimer);
+          videoTimer = null;
+        }
+
+        // Only collapse expansion if explicitly forced (modal close/slide change/8s before end/ended)
+        if (forceCollapse) {
+          stopVideoEndCheck();
+          collapseVideoExpansion();
+        }
+      }
+
+      window.resetVideoExpansion = function (resetHistory = false) {
+        if (resetHistory) {
+          hasBeenPaused = false;
+        }
+        handleVideoPauseOrStop(true);
+      };
+
+      window.addEventListener('message', function (event) {
+        if (!event.data) return;
+        try {
+          let data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+
+          if (data.event === 'infoDelivery' && data.info) {
+            if (data.info.duration && data.info.currentTime) {
+              checkRemainingTime(data.info.duration, data.info.currentTime);
+            }
+            if (data.info.playerState === 1) { // Playing
+              handleVideoPlay();
+            } else if (data.info.playerState === 2) { // Paused
+              handleVideoPauseOrStop(false);
+            } else if (data.info.playerState === 0) { // Ended
+              handleVideoPauseOrStop(true);
+            }
+          } else if (data.event === 'onStateChange') {
+            if (data.info === 1) {
+              handleVideoPlay();
+            } else if (data.info === 2) {
+              handleVideoPauseOrStop(false);
+            } else if (data.info === 0) {
+              handleVideoPauseOrStop(true);
+            }
+          }
+        } catch (e) { }
+      });
+
+      window.initYouTubeModalPlayer = function (iframeEl) {
+        if (!iframeEl) return;
+
+        function attachYT() {
+          if (window.YT && window.YT.Player) {
+            try {
+              ytPlayerInstance = new window.YT.Player(iframeEl, {
+                events: {
+                  'onStateChange': function (evt) {
+                    if (evt.data === window.YT.PlayerState.PLAYING) {
+                      handleVideoPlay();
+                    } else if (evt.data === window.YT.PlayerState.PAUSED) {
+                      handleVideoPauseOrStop(false);
+                    } else if (evt.data === window.YT.PlayerState.ENDED) {
+                      handleVideoPauseOrStop(true);
+                    }
+                  }
+                }
+              });
+            } catch (err) { }
+          }
+        }
+
+        if (window.YT && window.YT.Player) {
+          attachYT();
+        } else {
+          setTimeout(attachYT, 600);
+          setTimeout(attachYT, 1800);
+        }
+      };
+    })();
+
+    /* ════════════════════════════════════════════
        CAROUSEL, LIGHTBOX & PROJECT MODAL LOGIC
-    ════════════════════════════════════════════ */
+       ════════════════════════════════════════════ */
     let currentImages = [];
     let currentImgIndex = 0;
 
     function renderMedia(src, isLightbox = false) {
-      const isYouTube = src.match(/youtube\.com\/embed/i);
-      if (isYouTube) {
-        let cleanSrc = src;
-        if (!cleanSrc.includes('rel=')) {
-          cleanSrc += (cleanSrc.includes('?') ? '&' : '?') + 'rel=0&enablejsapi=1&playsinline=1&vq=hd1080';
-        }
-        return `<iframe src="${cleanSrc}" loading="lazy" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
+      const match = src.match(/(?:youtube\.com\/(?:embed\/|v\/|watch\?v=)|youtu\.be\/)([^?#&]+)/i);
+      if (match && match[1]) {
+        const videoId = match[1];
+        const origin = window.location.origin ? encodeURIComponent(window.location.origin) : '';
+        const cleanSrc = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1&vq=hd1080${origin ? '&origin=' + origin : ''}`;
+        const iframeAttr = !isLightbox ? 'id="ytProjectIframe"' : '';
+        return `<iframe ${iframeAttr} src="${cleanSrc}" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
       } else {
         return `<img src="${src}" style="${isLightbox ? 'max-width:100%; max-height:85vh; border-radius:6px; box-shadow:0 10px 40px rgba(0,0,0,0.5); object-fit:contain;' : 'width:100%; display:block; cursor:zoom-in; border-radius:6px;'}" ${!isLightbox ? `onclick="openLightbox('${src}')"` : ''} alt="Project Visual">`;
       }
@@ -4446,9 +4915,17 @@
       if (currentImgIndex < 0) currentImgIndex = currentImages.length - 1;
       if (currentImgIndex >= currentImages.length) currentImgIndex = 0;
 
+      if (window.resetVideoExpansion) window.resetVideoExpansion();
+
       const carousel = document.getElementById('carouselMediaContainer');
       if (carousel) {
         carousel.innerHTML = renderMedia(currentImages[currentImgIndex], false);
+        setTimeout(() => {
+          const ytIframe = document.getElementById('ytProjectIframe');
+          if (ytIframe && window.initYouTubeModalPlayer) {
+            window.initYouTubeModalPlayer(ytIframe);
+          }
+        }, 300);
       }
       const counter = document.getElementById('carouselCounter');
       if (counter) {
@@ -4459,6 +4936,8 @@
     function updateLightboxMedia(src) {
       const container = document.getElementById('lightboxContent');
       if (!container) return;
+
+      if (window.resetVideoExpansion) window.resetVideoExpansion(true);
 
       const hasMultiple = currentImages && currentImages.length > 1;
 
@@ -4472,6 +4951,13 @@
       ` : ''}
     </div>
   `;
+
+      setTimeout(() => {
+        const ytIframe = document.getElementById('ytLightboxIframe');
+        if (ytIframe && window.initYouTubeModalPlayer) {
+          window.initYouTubeModalPlayer(ytIframe);
+        }
+      }, 200);
     }
 
     function changeLightboxImage(direction, evt) {
@@ -4484,16 +4970,6 @@
 
       const src = currentImages[currentImgIndex];
       updateLightboxMedia(src);
-
-      // Sync carousel underneath
-      const carousel = document.getElementById('carouselMediaContainer');
-      if (carousel) {
-        carousel.innerHTML = renderMedia(src, false);
-      }
-      const counter = document.getElementById('carouselCounter');
-      if (counter) {
-        counter.textContent = (currentImgIndex + 1) + ' / ' + currentImages.length;
-      }
     }
 
     function openLightbox(src) {
@@ -4512,8 +4988,29 @@
     }
 
     function closeLightbox() {
+      if (window.resetVideoExpansion) window.resetVideoExpansion(true);
       const overlay = document.getElementById('lightboxOverlay');
       overlay.classList.remove('open');
+
+      // Sync underneath carousel cleanly upon closing lightbox (prevents double playing iframe stutter)
+      const src = currentImages[currentImgIndex];
+      if (src) {
+        const carousel = document.getElementById('carouselMediaContainer');
+        if (carousel) {
+          carousel.innerHTML = renderMedia(src, false);
+          setTimeout(() => {
+            const ytIframe = document.getElementById('ytProjectIframe');
+            if (ytIframe && window.initYouTubeModalPlayer) {
+              window.initYouTubeModalPlayer(ytIframe);
+            }
+          }, 200);
+        }
+        const counter = document.getElementById('carouselCounter');
+        if (counter) {
+          counter.textContent = (currentImgIndex + 1) + ' / ' + currentImages.length;
+        }
+      }
+
       setTimeout(() => {
         if (!overlay.classList.contains('open')) {
           document.getElementById('lightboxContent').innerHTML = '';
@@ -4534,6 +5031,8 @@
     function openProject(id, evt) {
       const p = projects[id];
       if (!p) return;
+
+      if (window.resetVideoExpansion) window.resetVideoExpansion(true);
 
       const eventObj = evt || window.event;
       const rawTarget = eventObj ? (eventObj.currentTarget || eventObj.target) : null;
@@ -4568,13 +5067,10 @@
       document.getElementById('modalHeroThumb').style.background = p.bg;
       document.getElementById('modalHeroLabel').textContent = p.label;
 
-      const visualsNote = (id === 'ashesi' || id === 'tec') ? `<div style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.6rem;line-height:1.6;"> > For best results, Click 'Watch on YouTube'</div>` : '';
-
       let imageHTML = '';
       if (currentImages.length > 0) {
         imageHTML = `
-      ${visualsNote}
-      <div style="position: relative; border-radius: 6px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); background: #000; display:flex; align-items:center; justify-content:center; min-height: 200px;">
+      <div class="modal-media-wrapper">
         <div id="carouselMediaContainer" style="width:100%;">
           ${renderMedia(currentImages[0], false)}
         </div>
@@ -4620,6 +5116,13 @@
 
       document.getElementById('modalOverlay').classList.add('open');
       document.body.style.overflow = 'hidden';
+
+      setTimeout(() => {
+        const ytIframe = document.getElementById('ytProjectIframe');
+        if (ytIframe && window.initYouTubeModalPlayer) {
+          window.initYouTubeModalPlayer(ytIframe);
+        }
+      }, 300);
     }
 
     function closeModal(e) {
@@ -4627,6 +5130,7 @@
       const overlay = document.getElementById('modalOverlay');
       overlay.classList.remove('open');
       document.body.style.overflow = '';
+      if (window.resetVideoExpansion) window.resetVideoExpansion();
       const iframes = overlay.querySelectorAll('iframe');
       iframes.forEach(iframe => iframe.remove());
       setTimeout(() => {
@@ -4642,6 +5146,7 @@
     ════════════════════════════════════════════ */
     function getResearchIllustration(id) {
       const illustrations = {
+        'dpoe-paper': `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg"><rect x="34" y="28" width="152" height="104" rx="18" fill="#ffffff" stroke="#0D1B3E" stroke-width="3"/><path d="M54 60h40" stroke="#6B1A2A" stroke-width="6" stroke-linecap="round"/><path d="M54 78h70" stroke="#0D1B3E" stroke-width="5" stroke-linecap="round"/><path d="M54 96h50" stroke="#D4A017" stroke-width="5" stroke-linecap="round"/><circle cx="150" cy="78" r="16" fill="none" stroke="#6B1A2A" stroke-width="3"/><path d="M150 68v20M140 78h20" stroke="#D4A017" stroke-width="3" stroke-linecap="round"/></svg>`,
         'kepler-paper': `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg"><rect x="36" y="24" width="148" height="112" rx="14" fill="#ffffff" stroke="#6B1A2A" stroke-width="3"/><rect x="58" y="44" width="44" height="10" rx="5" fill="#6B1A2A" opacity="0.85"/><rect x="58" y="66" width="72" height="8" rx="4" fill="#0D1B3E" opacity="0.7"/><rect x="58" y="84" width="60" height="8" rx="4" fill="#0D1B3E" opacity="0.5"/><path d="M146 54h24c10 0 18 8 18 18v16c0 10-8 18-18 18h-24" stroke="#D4A017" stroke-width="6" fill="none" stroke-linecap="round"/><path d="M146 54l16-12" stroke="#D4A017" stroke-width="6" stroke-linecap="round"/><path d="M146 106l16 12" stroke="#D4A017" stroke-width="6" stroke-linecap="round"/></svg>`,
         'agl-case': `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg"><rect x="24" y="44" width="172" height="72" rx="18" fill="#ffffff" stroke="#0D1B3E" stroke-width="3"/><path d="M58 92h32" stroke="#6B1A2A" stroke-width="8" stroke-linecap="round"/><path d="M94 92l28-28" stroke="#6B1A2A" stroke-width="8" stroke-linecap="round"/><path d="M122 64h34" stroke="#D4A017" stroke-width="8" stroke-linecap="round"/><path d="M156 64v24" stroke="#D4A017" stroke-width="8" stroke-linecap="round"/><path d="M58 70l24-16" stroke="#0D1B3E" stroke-width="6" stroke-linecap="round"/><circle cx="58" cy="92" r="8" fill="#0D1B3E"/><circle cx="122" cy="64" r="8" fill="#6B1A2A"/></svg>`,
         'spaulding-reimbursement': `<svg viewBox="0 0 220 160" xmlns="http://www.w3.org/2000/svg"><rect x="34" y="28" width="152" height="104" rx="18" fill="#ffffff" stroke="#0D1B3E" stroke-width="3"/><rect x="78" y="48" width="64" height="58" rx="14" fill="#F2FBFC" stroke="#1E5C38" stroke-width="3"/><path d="M96 70h28" stroke="#6B1A2A" stroke-width="6" stroke-linecap="round"/><path d="M96 86h18" stroke="#0D1B3E" stroke-width="6" stroke-linecap="round"/><path d="M126 50c8-8 18-10 28-6" stroke="#D4A017" stroke-width="6" stroke-linecap="round"/><circle cx="132" cy="54" r="8" fill="#1E5C38" opacity="0.85"/><path d="M70 110c14 8 32 10 52 6" stroke="#6B1A2A" stroke-width="5" stroke-linecap="round"/><path d="M130 114c10-4 22-4 34 0" stroke="#0D1B3E" stroke-width="5" stroke-linecap="round"/></svg>`,
@@ -4683,6 +5188,7 @@
       const body = document.getElementById('pdfBody');
       const illustration = getResearchIllustration(id);
       const researchSummary = {
+        'dpoe-paper': 'This empirical paper presents the Decoupled Portfolio Orchestration Engine (DPOE) — a lightweight, zero-cost, 4-tier conversational AI architecture ($0.00 infrastructure budget). Production evaluations demonstrate a 50% reduction in generative API calls, 15× faster latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing.',
         'kepler-paper': 'This quantitative Kepler College case study analyzed 587 student records and found a moderate positive correlation between professional competencies (attendance, assignment submission, and task management) and student performance outcomes.',
         'agl-case': 'This Africa Global Logistics study examines Rwanda’s landlocked transport context, showing how optimizing road–sea intermodal transit can improve logistics performance, lower commodity costs, and support faster, more reliable delivery across regional supply chains.',
         'spaulding-reimbursement': 'This executive summary examines reimbursement strategies and access-focused recommendations for specialized rehabilitation care, highlighting how financing design shapes patient access and service delivery.',
@@ -4693,7 +5199,8 @@
       };
       const summaryText = researchSummary[id] || 'This document is available online. Click the link below to view the full paper.';
 
-      if (driveId && (driveId.startsWith('http') || driveId.startsWith('chrome-extension://'))) {
+      const hasLink = driveId && (driveId.startsWith('http') || driveId.startsWith('chrome-extension://'));
+      if (hasLink) {
         body.innerHTML = `
       <div class="pdf-placeholder">
         <div class="pdf-illustration">${illustration}</div>
@@ -4705,22 +5212,17 @@
         </div>
       </div>
     `;
-      } else if (driveId && !driveId.startsWith('GOOGLE')) {
+      } else if (driveId && !driveId.startsWith('GOOGLE') && driveId !== '#') {
         body.innerHTML = `<iframe class="pdf-iframe" src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay"></iframe>`;
       } else {
         body.innerHTML = `
       <div class="pdf-placeholder">
         <div class="pdf-illustration">${illustration}</div>
         <div class="pdf-placeholder-content">
-          <div class="pdf-placeholder-icon">📄</div>
+          <div class="pdf-placeholder-icon">🔗</div>
           <div class="pdf-placeholder-title">${title}</div>
-          <div class="pdf-placeholder-text">
-            This document is not yet linked. To connect your PDF:<br><br>
-            1. Upload to Google Drive → Share → Anyone with link<br>
-            2. Copy the File ID from the URL<br>
-            3. Replace <strong>GOOGLE_DRIVE_FILE_ID</strong> in the code with your actual ID
-          </div>
-          <div class="pdf-placeholder-code">https://drive.google.com/file/d/<strong>YOUR_FILE_ID</strong>/preview</div>
+          <div class="pdf-placeholder-text">${summaryText}</div>
+          <a href="#" class="modal-cta disabled" style="margin-top:1rem; display:inline-block; opacity:0.65; pointer-events:none;">Publication Pending (Link Coming Soon) →</a>
         </div>
       </div>
     `;
@@ -4941,6 +5443,7 @@
       const cards = document.querySelectorAll('.project-card, .skill-card, .hero-card, .research-card');
       cards.forEach(card => {
         card.classList.add('tilt-card');
+        let rAF = null;
 
         card.addEventListener('mouseenter', () => {
           // Responsive tracking transition during hover
@@ -4948,19 +5451,23 @@
         });
 
         card.addEventListener('mousemove', e => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          const rotateX = ((y - centerY) / centerY) * -5.5; // Balanced 5.5° tilt max
-          const rotateY = ((x - centerX) / centerX) * 5.5;
-          card.style.setProperty('--mouse-x', `${x}px`);
-          card.style.setProperty('--mouse-y', `${y}px`);
-          card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale(1.02) translateY(-6px)`;
+          if (rAF) cancelAnimationFrame(rAF);
+          rAF = requestAnimationFrame(() => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -5.5; // Balanced 5.5° tilt max
+            const rotateY = ((x - centerX) / centerX) * 5.5;
+            card.style.setProperty('--mouse-x', `${x}px`);
+            card.style.setProperty('--mouse-y', `${y}px`);
+            card.style.transform = `perspective(1000px) rotateX(${rotateX.toFixed(2)}deg) rotateY(${rotateY.toFixed(2)}deg) scale(1.02) translateY(-6px)`;
+          });
         });
 
         card.addEventListener('mouseleave', () => {
+          if (rAF) cancelAnimationFrame(rAF);
           // Zero-Gravity Space Release Transition: Slow-motion weightless floating float-back into default orbit
           card.style.transition = 'transform 1.4s cubic-bezier(0.12, 1, 0.22, 1), box-shadow 0.9s cubic-bezier(0.12, 1, 0.22, 1), border-color 0.9s ease';
           card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0px)';
@@ -4969,33 +5476,60 @@
     })();
 
     /* ════════════════════════════════════════════
-       AVATAR POPUP INTERACTION (Hover, Click & Right-Click - 2s Max)
+       AVATAR POPUP INTERACTION (1st: Hello, 2nd: Yeah building, 3rd+: nothing)
        ════════════════════════════════════════════ */
     (function () {
       const avatar = document.getElementById('aboutAvatar');
-      if (!avatar) return;
+      const avatarPop = document.getElementById('avatarPop');
+      if (!avatar || !avatarPop) return;
+
       let timer = null;
+      let delayTimer = null;
+      let hoverCount = 0;
 
       function triggerPop(e) {
         if (e && e.type === 'contextmenu') {
           e.preventDefault();
         }
-        // Always reset timer and show pop
-        avatar.classList.add('pop-visible');
+
         clearTimeout(timer);
-        timer = setTimeout(() => {
+        clearTimeout(delayTimer);
+
+        if (hoverCount === 0) {
+          // 1st hover: wait 1 second before displaying "Hello, pleasure you're here"
+          hoverCount++;
+          delayTimer = setTimeout(() => {
+            avatarPop.textContent = "Hello, pleasure you're here";
+            avatar.classList.add('pop-visible');
+            timer = setTimeout(() => {
+              avatar.classList.remove('pop-visible');
+            }, 2500);
+          }, 1000);
+        } else if (hoverCount === 1) {
+          // 2nd hover: delay a bit then "Yeah, always building"
+          hoverCount++;
+          delayTimer = setTimeout(() => {
+            avatarPop.textContent = "Yeah, always building";
+            avatar.classList.add('pop-visible');
+            timer = setTimeout(() => {
+              avatar.classList.remove('pop-visible');
+            }, 2500);
+          }, 450);
+        } else {
+          // 3rd time moving forward: nothing
           avatar.classList.remove('pop-visible');
-        }, 2000);
+        }
       }
 
       avatar.addEventListener('mouseenter', triggerPop);
       avatar.addEventListener('click', triggerPop);
       avatar.addEventListener('contextmenu', triggerPop);
       avatar.addEventListener('mouseleave', () => {
+        clearTimeout(delayTimer);
         clearTimeout(timer);
         timer = setTimeout(() => {
           avatar.classList.remove('pop-visible');
-        }, 1000);
+        }, 800);
       });
     })();
 

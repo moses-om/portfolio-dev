@@ -33,15 +33,185 @@
       align-items: flex-end;
       gap: 14px;
       opacity: 0;
-      transform: translateX(64px) scale(0.90);
       pointer-events: none;
-      transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    #moses-local-assistant.visible {
+    /* ─── FUTURISTIC ARC-LAUNCH ENTRY ANIMATION ─── */
+    /* ─── ELEGANT 4-ACT ENTRANCE CHOREOGRAPHY ───
+         Act 1 (0→22%):   Spring Pop Entrance — tiny → overshoot → spring back → settle
+         Act 2 (22→35%):  Patient Hold — rests briefly at top right
+         Act 3 (35→82%):  Continuous Depth Descent — grows as it approaches midpoint,
+                          shrinks back to original size as it reaches landing
+         Act 4 (82→100%): Soft Landing Bounce & Settle
+    ─────────────────────────────────────────────────── */
+    @keyframes mosesOblateEntry {
+
+      /* Act 1a: Smooth gentle pop-in — starts soft, no harsh snap */
+      0% {
+        opacity: 1;
+        transform: translateY(calc(-100vh + 100px)) scale(0.2);
+        filter: drop-shadow(0 0 6px rgba(212, 160, 23, 0.4));
+        animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+      }
+
+      /* Act 1b: Soft overshoot — gentle expansion */
+      10% {
+        opacity: 1;
+        transform: translateY(calc(-100vh + 100px)) scale(1.16);
+        filter: brightness(1.12) drop-shadow(0 0 20px rgba(212, 160, 23, 0.65));
+        animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      }
+
+      /* Act 1c: Soft recoil settle */
+      18% {
+        opacity: 1;
+        transform: translateY(calc(-100vh + 100px)) scale(0.96);
+        filter: drop-shadow(0 0 12px rgba(212, 160, 23, 0.4));
+        animation-timing-function: cubic-bezier(0.33, 1, 0.68, 1);
+      }
+
+      /* Act 1d & Act 2: Settled at top right — patient hold */
+      25% {
+        opacity: 1;
+        transform: translateY(calc(-100vh + 100px)) scale(1.0);
+        filter: drop-shadow(0 0 14px rgba(212, 160, 23, 0.4));
+        animation-timing-function: linear;
+      }
+      36% {
+        opacity: 1;
+        transform: translateY(calc(-100vh + 100px)) scale(1.0);
+        filter: drop-shadow(0 0 14px rgba(212, 160, 23, 0.4));
+        /* Ease-in timing function: starts descent gently and picks up momentum */
+        animation-timing-function: cubic-bezier(0.42, 0, 1, 1);
+      }
+
+      /* Act 3a: Midpoint of screen — sweeps through at peak speed & scale */
+      60% {
+        opacity: 1;
+        transform: translateY(calc(-48vh)) scale(1.46);
+        filter: brightness(1.14) drop-shadow(0 0 28px rgba(212, 160, 23, 0.65));
+        /* Ease-out timing function: smoothly decelerates into landing */
+        animation-timing-function: cubic-bezier(0, 0, 0.58, 1);
+      }
+
+      /* Act 3b: Arrives at landing spot — back to original scale */
+      83% {
+        opacity: 1;
+        transform: translateY(0) scale(1.0);
+        filter: brightness(1.0) drop-shadow(0 4px 14px rgba(0, 0, 0, 0.28));
+        animation-timing-function: linear;
+      }
+
+      /* Act 4a: Soft landing bounce — float up slightly */
+      90% {
+        opacity: 1;
+        transform: translateY(-12px) scale(1.06);
+        filter: brightness(1.05) drop-shadow(0 6px 18px rgba(212, 160, 23, 0.45));
+        animation-timing-function: linear;
+      }
+
+      /* Act 4b: Gentle dip back down */
+      96% {
+        opacity: 1;
+        transform: translateY(3px) scale(0.98);
+        animation-timing-function: linear;
+      }
+
+      /* Act 4c: Final settled rest */
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1.0);
+        filter: brightness(1.0) drop-shadow(0 0 14px rgba(212, 160, 23, 0.35));
+      }
+    }
+
+    #moses-local-assistant.launching {
+      animation: mosesOblateEntry 6.5s linear forwards;
+      pointer-events: none;
+    }
+
+    #moses-local-assistant.launched {
       opacity: 1;
-      transform: translateX(0) scale(1);
+      transform: translateX(0) translateY(0) scale(1);
       pointer-events: auto;
+    }
+
+    /* ─── INTRO SPEECH BUBBLE ─── */
+    .moses-intro-bubble {
+      position: absolute;
+      /* sits above the launcher; launcher is ~60px, gap is 14px */
+      bottom: calc(100% + 18px);
+      right: 0;
+      background: linear-gradient(135deg, #0D1B3E 0%, #071024 55%, #1F0712 100%);
+      border: 1.5px solid rgba(212, 160, 23, 0.6);
+      border-radius: 14px 14px 4px 14px;
+      padding: 10px 18px;
+      color: rgba(255, 255, 255, 0.93);
+      font-size: 0.8rem;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      white-space: nowrap;
+      box-shadow:
+        0 8px 28px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(212, 160, 23, 0.12),
+        0 2px 8px rgba(212, 160, 23, 0.18);
+      transform-origin: bottom right;
+      opacity: 0;
+      pointer-events: auto;
+      cursor: pointer;
+      z-index: 1;
+      transition:
+        transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+        border-color 0.25s ease,
+        box-shadow 0.25s ease,
+        background 0.25s ease;
+    }
+
+    .moses-intro-bubble:hover {
+      transform: translateY(-4px) scale(1.05);
+      border-color: rgba(255, 215, 0, 0.95);
+      background: linear-gradient(135deg, #11224D 0%, #0A1633 55%, #2B0A19 100%);
+      box-shadow:
+        0 14px 38px rgba(3, 7, 18, 0.75),
+        0 0 22px rgba(212, 160, 23, 0.45),
+        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    }
+
+    /* Triangle pointer — points down-right toward the orb */
+    .moses-intro-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -7px;
+      right: 18px;
+      width: 0;
+      height: 0;
+      border-left: 7px solid transparent;
+      border-right: 0px solid transparent;
+      border-top: 7px solid rgba(212, 160, 23, 0.6);
+      transition: border-top-color 0.25s ease;
+    }
+
+    .moses-intro-bubble:hover::after {
+      border-top-color: rgba(255, 215, 0, 0.95);
+    }
+
+    .moses-intro-bubble.show {
+      animation: mosesIntroIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    .moses-intro-bubble.hide {
+      animation: mosesIntroOut 0.4s ease-in forwards;
+    }
+
+    @keyframes mosesIntroIn {
+      0%   { opacity: 0; transform: scale(0.65) translateY(10px); filter: blur(2px); }
+      60%  { opacity: 1; transform: scale(1.04) translateY(-2px); filter: blur(0); }
+      100% { opacity: 1; transform: scale(1)    translateY(0);     filter: blur(0); }
+    }
+
+    @keyframes mosesIntroOut {
+      0%   { opacity: 1; transform: scale(1)    translateY(0);    filter: blur(0); }
+      100% { opacity: 0; transform: scale(0.88) translateY(-8px); filter: blur(1px); }
     }
 
     /* ─── FLOATING LAUNCHER (60px) ─── */
@@ -637,21 +807,24 @@
       text-align: left;
       padding: 0;
       background: transparent;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
     }
 
     .moses-welcome-heading {
-      font-size: 1.05rem;
+      font-size: 1.15rem;
       font-weight: 600;
       color: #0D1B3E;
-      margin: 0 0 4px 0;
-      letter-spacing: -0.015em;
+      margin: 0 0 6px 0;
+      letter-spacing: -0.02em;
     }
 
     .moses-welcome-body {
-      font-size: 0.82rem;
-      color: #78716C;
-      line-height: 1.55;
-      margin: 0 0 20px 0;
+      font-size: 0.84rem;
+      color: #57534E;
+      line-height: 1.5;
+      margin: 0 0 18px 0;
     }
 
     /* ─── DISCOVERY SECTION ─── */
@@ -661,7 +834,7 @@
       text-transform: uppercase;
       letter-spacing: 0.06em;
       color: #A8A29E;
-      margin: 0 0 10px 0;
+      margin: 0 0 8px 0;
     }
 
     /* ─── DISCOVERY QUESTION PROMPTS ─── */
@@ -677,17 +850,19 @@
       border-bottom: 1px solid rgba(0, 0, 0, 0.05);
       color: #1C1917;
       font-family: 'Outfit', sans-serif;
-      font-size: 0.82rem;
+      font-size: 0.825rem;
       font-weight: 400;
-      padding: 10px 12px 10px 0;
+      padding: 10px 10px;
+      margin: 0 -6px;
+      border-radius: 6px;
       cursor: pointer;
       text-align: left;
       display: flex;
       align-items: center;
       gap: 10px;
-      transition: color 0.15s ease, padding-left 0.2s ease;
+      transition: background 0.15s ease, color 0.15s ease;
       line-height: 1.45;
-      width: 100%;
+      width: calc(100% + 12px);
     }
 
     .moses-discover-q:last-child {
@@ -695,14 +870,14 @@
     }
 
     .moses-discover-q:hover {
+      background: rgba(13, 27, 62, 0.03);
       color: #6B1A2A;
-      padding-left: 4px;
     }
 
     .moses-discover-q:focus-visible {
       outline: 2px solid #D4A017;
       outline-offset: 2px;
-      border-radius: 4px;
+      border-radius: 6px;
     }
 
     .moses-discover-q .moses-q-arrow {
@@ -760,7 +935,8 @@
     .moses-welcome .moses-welcome-heading,
     .moses-welcome .moses-welcome-body,
     .moses-welcome .moses-discover-label,
-    .moses-welcome .moses-discover-q {
+    .moses-welcome .moses-discover-q,
+    .moses-welcome .moses-grounded-note {
       opacity: 0;
       transform: translateY(6px);
       animation: mosesWelcomeFadeIn 0.35s ease forwards;
@@ -774,6 +950,7 @@
     .moses-welcome .moses-discover-q:nth-child(3) { animation-delay: 0.36s; }
     .moses-welcome .moses-discover-q:nth-child(4) { animation-delay: 0.42s; }
     .moses-welcome .moses-discover-q:nth-child(5) { animation-delay: 0.48s; }
+    .moses-welcome .moses-grounded-note           { animation-delay: 0.54s; }
 
     @keyframes mosesWelcomeFadeIn {
       from { opacity: 0; transform: translateY(6px); }
@@ -847,19 +1024,29 @@
     /* ─── COMPOSER ─── */
     .moses-composer-wrap {
       background: #FFFFFF;
-      border-top: 1px solid rgba(0, 0, 0, 0.06);
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+      padding: 8px 14px 12px;
     }
 
     .moses-composer-hint {
-      font-size: 0.68rem;
+      font-size: 0.74rem;
       color: #A8A29E;
       text-align: center;
-      padding: 6px 14px 0;
-      line-height: 1;
+      padding: 0 0 8px 0;
+      line-height: 1.2;
+    }
+
+    .moses-grounded-note {
+      font-size: 0.72rem;
+      color: #A8A29E;
+      text-align: center;
+      margin-top: 14px;
+      padding: 8px 10px 2px;
+      line-height: 1.35;
     }
 
     .moses-composer {
-      padding: 8px 14px 12px;
+      padding: 0;
       background: transparent;
       display: flex;
       align-items: center;
@@ -868,8 +1055,8 @@
 
     .moses-composer-input {
       flex: 1;
-      border: 1.5px solid rgba(0, 0, 0, 0.10);
-      background: #FAFAFA;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      background: #FBFBFB;
       border-radius: 12px;
       padding: 10px 14px;
       font-family: 'Outfit', sans-serif;
@@ -887,7 +1074,7 @@
     .moses-composer-input:focus {
       background: #FFFFFF;
       border-color: #6B1A2A;
-      box-shadow: 0 0 0 3px rgba(107, 26, 42, 0.08);
+      box-shadow: 0 0 0 3px rgba(107, 26, 42, 0.06);
     }
 
     /* Microphone Slot (Phase 9B) */
@@ -912,6 +1099,9 @@
       justify-content: center;
       transition: background 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
       flex-shrink: 0;
+    .moses-send-btn:hover {
+      background: #6B1A2A;
+      box-shadow: 0 2px 8px rgba(107, 26, 42, 0.25);
     }
 
     .moses-send-btn:hover {
@@ -951,7 +1141,8 @@
       .moses-messages { padding: 16px 12px; }
       .moses-discover-q { font-size: 0.78rem; padding: 9px 10px 9px 0; }
       .moses-followup-chip { font-size: 0.72rem; padding: 5px 10px; }
-      .moses-composer-hint { font-size: 0.64rem; }
+      .moses-composer-hint,
+      .moses-grounded-note { font-size: 0.72rem; }
     }
 
     /* ─── REDUCED MOTION ─── */
@@ -966,7 +1157,8 @@
       .moses-welcome .moses-welcome-heading,
       .moses-welcome .moses-welcome-body,
       .moses-welcome .moses-discover-label,
-      .moses-welcome .moses-discover-q {
+      .moses-welcome .moses-discover-q,
+      .moses-welcome .moses-grounded-note {
         animation: none !important;
         opacity: 1 !important;
         transform: none !important;
@@ -1038,6 +1230,7 @@
               What is Moses's background?
             </button>
           </div>
+          <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         </div>
       </div>
 
@@ -1111,6 +1304,10 @@
     const shouldOpen = typeof show === 'boolean' ? show : !isOpen;
 
     if (shouldOpen) {
+      if (currentIntroBubble) {
+        currentIntroBubble.remove();
+        currentIntroBubble = null;
+      }
       if (isOpen) return;
       panel.classList.remove('closing');
       panel.classList.add('open');
@@ -1342,14 +1539,22 @@
   // ═══════════════════════════════════════════════
   // 10. FORMAT RESPONSE (Markdown → HTML + Section Links)
   // ═══════════════════════════════════════════════
+  function formatInlineMarkdown(str) {
+    if (!str) return '';
+    // Bold (**text** or __text__)
+    str = str.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    str = str.replace(/__(.*?)__/g, '<strong>$1</strong>');
+    // Italic (*text* or _text_)
+    str = str.replace(/\*([^\*]+)\*/g, '<em>$1</em>');
+    str = str.replace(/_([^_]+)_/g, '<em>$1</em>');
+    // Inline code (`code`)
+    str = str.replace(/`([^`]+)`/g, '<code>$1</code>');
+    return str;
+  }
+
   function formatResponse(text) {
     if (!text) return '';
     let h = escapeHtml(text);
-
-    // Bold, italic, inline code
-    h = h.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    h = h.replace(/\*(.*?)\*/g, '<em>$1</em>');
-    h = h.replace(/`(.*?)`/g, '<code>$1</code>');
 
     // Internal portfolio section links: #sectionId → clickable link
     // Matches #sectionId as a standalone word boundary reference
@@ -1367,21 +1572,42 @@
       return `<a href="#${sectionId}" class="moses-section-link" data-section="${sectionId}">${label}</a>`;
     });
 
-    // Paragraphs & lists
-    const blocks = h.split(/\n\n+/);
-    return blocks.map(b => {
-      b = b.trim();
-      if (!b) return '';
-      if (/^[-*]\s/.test(b)) {
-        const items = b.split(/\n[-*]\s+/).filter(Boolean);
-        return `<ul>${items.map(it => `<li>${it}</li>`).join('')}</ul>`;
+    // Line-by-line bullet list, numbered list, and paragraph parsing
+    const lines = h.split(/\n/);
+    let out = '';
+    let inUl = false;
+    let inOl = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        if (inOl) { out += '</ol>'; inOl = false; }
+        continue;
       }
-      if (/^\d+\.\s/.test(b)) {
-        const items = b.split(/\n\d+\.\s+/).filter(Boolean);
-        return `<ol>${items.map(it => `<li>${it}</li>`).join('')}</ol>`;
+
+      const bulletMatch = line.match(/^[-*]\s+(.*)/);
+      const numMatch = line.match(/^\d+\.\s+(.*)/);
+
+      if (bulletMatch) {
+        if (inOl) { out += '</ol>'; inOl = false; }
+        if (!inUl) { out += '<ul>'; inUl = true; }
+        out += `<li>${formatInlineMarkdown(bulletMatch[1])}</li>`;
+      } else if (numMatch) {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        if (!inOl) { out += '<ol>'; inOl = true; }
+        out += `<li>${formatInlineMarkdown(numMatch[1])}</li>`;
+      } else {
+        if (inUl) { out += '</ul>'; inUl = false; }
+        if (inOl) { out += '</ol>'; inOl = false; }
+        out += `<p>${formatInlineMarkdown(line)}</p>`;
       }
-      return `<p>${b.replace(/\n/g, '<br>')}</p>`;
-    }).join('');
+    }
+
+    if (inUl) out += '</ul>';
+    if (inOl) out += '</ol>';
+
+    return out;
   }
 
   function escapeHtml(str) {
@@ -1408,26 +1634,85 @@
   const assistantContainer = document.getElementById('moses-local-assistant');
   let hasUnlockedAssistant = false;
 
+  // ─── Smooth Fade-In Oblate Entry ───────────────────────────────
+  function triggerArcLaunch() {
+    if (!assistantContainer) return;
+
+    assistantContainer.classList.add('launching');
+    assistantContainer.addEventListener('animationend', () => {
+      assistantContainer.classList.remove('launching');
+      assistantContainer.classList.add('launched');
+      // After ball lands, show intro bubbles after a short settle pause
+      setTimeout(playIntroBubbles, 800);
+    }, { once: true });
+  }
+
+  // ─── Intro Speech Bubble Sequence ──────────────────────────────
+  let currentIntroBubble = null;
+
+  function showIntroBubble(text, holdMs, onDone) {
+    if (currentIntroBubble) {
+      currentIntroBubble.remove();
+      currentIntroBubble = null;
+    }
+    const bubble = document.createElement('div');
+    bubble.className = 'moses-intro-bubble';
+    bubble.textContent = text;
+    // Insert before launcher so it stacks above it in the flex column
+    const launcherEl = assistantContainer.querySelector('.moses-launcher');
+    assistantContainer.insertBefore(bubble, launcherEl);
+
+    // Clicking the speech bubble opens the assistant
+    bubble.addEventListener('click', (e) => {
+      e.stopPropagation();
+      togglePanel(true);
+    });
+
+    void bubble.offsetWidth; // force reflow before animation
+    bubble.classList.add('show');
+    currentIntroBubble = bubble;
+
+    if (holdMs > 0) {
+      setTimeout(() => {
+        if (currentIntroBubble === bubble) {
+          bubble.classList.remove('show');
+          bubble.classList.add('hide');
+          bubble.addEventListener('animationend', () => {
+            if (currentIntroBubble === bubble) currentIntroBubble = null;
+            bubble.remove();
+            if (onDone) onDone();
+          }, { once: true });
+        }
+      }, holdMs);
+    }
+  }
+
+  function playIntroBubbles() {
+    // First message: introduce (no star emoji, disappears after 3 seconds)
+    showIntroBubble('Hello, I am here to help', 3000, () => {
+      // Pause between messages
+      setTimeout(() => {
+        // Second message: stays visible permanently (holdMs = 0)
+        showIntroBubble('Just ask me', 0, null);
+      }, 500);
+    });
+  }
+
   function checkScrollVisibility() {
     if (!assistantContainer || hasUnlockedAssistant) return;
-    const contactEl = document.getElementById('contact');
-    let shouldUnlock = false;
+    
+    // Check if user has scrolled to the absolute bottom of the page
+    const scrollBottom = window.scrollY + window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+    const isAtEnd = (docHeight - scrollBottom) <= 35;
 
-    if (contactEl) {
-      const rect = contactEl.getBoundingClientRect();
-      // Unlocks when user reaches the last section (#contact)
-      shouldUnlock = rect.top <= window.innerHeight * 0.75;
-    } else {
-      // Fallback: near bottom of page
-      const scrollBottom = window.scrollY + window.innerHeight;
-      const docHeight = document.documentElement.scrollHeight;
-      shouldUnlock = scrollBottom >= docHeight - 600;
-    }
-
-    if (shouldUnlock) {
+    if (isAtEnd) {
       hasUnlockedAssistant = true;
-      assistantContainer.classList.add('visible');
       window.removeEventListener('scroll', handleScrollVisibility);
+      // Wait 7 seconds after hitting the end of the page before beginning entry
+      setTimeout(() => {
+        triggerArcLaunch();
+      }, 7000);
     }
   }
 
