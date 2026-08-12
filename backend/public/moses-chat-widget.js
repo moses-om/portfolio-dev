@@ -1085,8 +1085,8 @@
       font-size: 0.72rem;
       color: #A8A29E;
       text-align: center;
-      margin-top: 36px;
-      margin-bottom: 4px;
+      margin-top: 85px;
+      margin-bottom: 6px;
       padding: 8px 10px 0;
       border-top: 1px dashed rgba(0, 0, 0, 0.06);
       line-height: 1.35;
