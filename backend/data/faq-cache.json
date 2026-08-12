@@ -180,7 +180,7 @@
       "What is the AI architecture Moses researched?",
       "how did moses build MIRA Intelligence?"
     ],
-    "answer": "DPOE stands for Decoupled Portfolio Orchestration Engine, a zero-cost 4-tier conversational AI architecture detailed in Moses's 2026 research paper ('Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI'). Documented evaluation metrics include a 50% reduction in generative API calls, 15× faster response latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing.",
+    "answer": "MIRA Intelligence (Decoupled Portfolio Orchestration Engine — DPOE) is a zero-cost 4-tier conversational AI architecture detailed in Moses's 2026 research paper ('Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI'). Documented evaluation metrics include a 50% reduction in generative API calls, 15× faster response latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing.",
     "source": "portfolio.research[0]",
     "anchor": "#research",
     "verified": true

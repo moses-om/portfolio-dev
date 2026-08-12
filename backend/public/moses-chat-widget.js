@@ -1238,7 +1238,7 @@
               <span class="moses-status-dot" id="mosesStatusDot"></span>
               <span id="mosesStatusText">Ready</span>
             </span>
-            <span>&nbsp;&nbsp;·&nbsp;&nbsp;Grounded Portfolio Assistant</span>
+            <span>&nbsp;&nbsp;·&nbsp;&nbsp;Decoupled Portfolio Orchestration Engine (DPOE)</span>
           </div>
         </div>
         <button class="moses-close-btn" id="mosesCloseBtn" aria-label="Close assistant">

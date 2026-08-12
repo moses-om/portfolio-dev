@@ -262,7 +262,7 @@ const portfolioData = {
       year: "2026",
       type: "Upcoming Paper · AI Systems & Architecture",
       status: "Under Compilation",
-      summary: "Presents the Decoupled Portfolio Orchestration Engine (DPOE) — a zero-cost, 4-tier conversational AI architecture ($0.00 budget). Production evaluations show a 50% reduction in generative API calls, 15× faster latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing."
+      summary: "Presents MIRA Intelligence (Decoupled Portfolio Orchestration Engine — DPOE) — a zero-cost, 4-tier conversational AI architecture ($0.00 budget). Production evaluations show a 50% reduction in generative API calls, 15× faster latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing."
     },
     {
       id: "kepler-paper",
