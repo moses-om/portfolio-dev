@@ -1077,17 +1077,18 @@
       color: #57534E;
       text-align: center;
       padding: 0;
-      margin-bottom: 2px;
+      margin-bottom: 6px;
       line-height: 1.3;
     }
 
     .moses-grounded-note {
-      font-size: 0.70rem;
+      font-size: 0.72rem;
       color: #A8A29E;
       text-align: center;
-      margin-top: 0;
-      margin-bottom: 8px;
-      padding: 0 10px;
+      margin-top: 36px;
+      margin-bottom: 4px;
+      padding: 8px 10px 0;
+      border-top: 1px dashed rgba(0, 0, 0, 0.06);
       line-height: 1.35;
     }
 
@@ -1278,12 +1279,12 @@
               What is Moses's background?
             </button>
           </div>
+          <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         </div>
       </div>
 
       <div class="moses-composer-wrap">
         <div class="moses-composer-hint">Ask a simple question — or go deeper.</div>
-        <div class="moses-grounded-note">Grounded in Moses’s portfolio, projects, research, and professional experience.</div>
         <form class="moses-composer" id="mosesForm">
           <input type="text" class="moses-composer-input" id="mosesInput" placeholder="Ask about a project, skill, or opportunity…" autocomplete="off" aria-label="Ask MIRA Intelligence a question" />
           <div class="moses-mic-slot" id="mosesMicSlot" aria-hidden="true"></div>
