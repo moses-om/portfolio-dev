@@ -602,7 +602,18 @@
       overflow: hidden;
       display: none;
       transform-origin: bottom right;
-      will-change: transform, opacity, filter;
+      transition: height 0.55s cubic-bezier(0.16, 1, 0.3, 1), max-height 0.55s cubic-bezier(0.16, 1, 0.3, 1), transform 0.55s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.55s ease;
+      will-change: transform, opacity, filter, height, box-shadow;
+    }
+
+    .moses-panel.typing-shrink {
+      height: 280px !important;
+      max-height: 280px !important;
+      transform: translateY(-2px) scale(0.985);
+      box-shadow:
+        0 20px 60px rgba(5, 11, 26, 0.42),
+        0 0 35px rgba(212, 160, 23, 0.22),
+        0 0 0 1.5px rgba(212, 160, 23, 0.35);
     }
 
     .moses-panel.open {
@@ -1092,6 +1103,57 @@
       line-height: 1.35;
     }
 
+    /* ─── DYNAMIC TYPING COMPRESSION ─── */
+    .moses-discover-questions,
+    .moses-grounded-note {
+      transition: max-height 0.45s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.35s ease, transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), margin 0.45s ease, padding 0.45s ease;
+      max-height: 600px;
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      overflow: hidden;
+    }
+
+    .moses-discover-questions.typing-compress,
+    .moses-grounded-note.typing-compress {
+      max-height: 0 !important;
+      opacity: 0 !important;
+      transform: scale(0.95) translateY(-10px) !important;
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      border-top: none !important;
+      pointer-events: none !important;
+    }
+
+    /* ─── TYPEWRITER ANIMATION ─── */
+    .moses-welcome-typewriter {
+      font-size: 0.88rem;
+      font-weight: 500;
+      color: #D4A017;
+      margin-top: 2px;
+      margin-bottom: 8px;
+      min-height: 1.4em;
+      display: inline-flex;
+      align-items: center;
+      gap: 1px;
+    }
+
+    .moses-typewriter-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background-color: #D4A017;
+      margin-left: 2px;
+      animation: mosesCursorBlink 0.75s infinite;
+      vertical-align: middle;
+    }
+
+    @keyframes mosesCursorBlink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
     .moses-composer {
       padding: 0;
       background: transparent;
@@ -1319,12 +1381,12 @@
   // ═══════════════════════════════════════════════
   // 3. ELEMENT REFERENCES
   // ═══════════════════════════════════════════════
-  const panel     = document.getElementById('mosesPanel');
-  const launcher  = document.getElementById('mosesLauncher');
-  const closeBtn  = document.getElementById('mosesCloseBtn');
-  const messages  = document.getElementById('mosesMessages');
-  const form      = document.getElementById('mosesForm');
-  const input     = document.getElementById('mosesInput');
+  const panel = document.getElementById('mosesPanel');
+  const launcher = document.getElementById('mosesLauncher');
+  const closeBtn = document.getElementById('mosesCloseBtn');
+  const messages = document.getElementById('mosesMessages');
+  const form = document.getElementById('mosesForm');
+  const input = document.getElementById('mosesInput');
   const statusDot = document.getElementById('mosesStatusDot');
   const statusTxt = document.getElementById('mosesStatusText');
 
@@ -1724,7 +1786,15 @@
     }
     const bubble = document.createElement('div');
     bubble.className = 'moses-intro-bubble';
-    bubble.textContent = text;
+
+    const spanText = document.createElement('span');
+    spanText.className = 'moses-intro-typewriter-text';
+    const cursorEl = document.createElement('span');
+    cursorEl.className = 'moses-typewriter-cursor';
+
+    bubble.appendChild(spanText);
+    bubble.appendChild(cursorEl);
+
     // Insert before launcher so it stacks above it in the flex column
     const launcherEl = assistantContainer.querySelector('.moses-launcher');
     assistantContainer.insertBefore(bubble, launcherEl);
@@ -1739,19 +1809,33 @@
     bubble.classList.add('show');
     currentIntroBubble = bubble;
 
-    if (holdMs > 0) {
-      setTimeout(() => {
-        if (currentIntroBubble === bubble) {
-          bubble.classList.remove('show');
-          bubble.classList.add('hide');
-          bubble.addEventListener('animationend', () => {
-            if (currentIntroBubble === bubble) currentIntroBubble = null;
-            bubble.remove();
-            if (onDone) onDone();
-          }, { once: true });
+    let charI = 0;
+    function typeIntroChar() {
+      if (currentIntroBubble !== bubble) return;
+      if (charI <= text.length) {
+        spanText.textContent = text.substring(0, charI);
+        charI++;
+        setTimeout(typeIntroChar, 40);
+      } else {
+        if (holdMs > 0) {
+          setTimeout(() => {
+            if (currentIntroBubble === bubble) {
+              bubble.classList.remove('show');
+              bubble.classList.add('hide');
+              bubble.addEventListener('animationend', () => {
+                if (currentIntroBubble === bubble) currentIntroBubble = null;
+                bubble.remove();
+                if (onDone) onDone();
+              }, { once: true });
+            }
+          }, holdMs);
+        } else if (onDone) {
+          onDone();
         }
-      }, holdMs);
+      }
     }
+
+    typeIntroChar();
   }
 
   function playIntroBubbles() {
@@ -1767,7 +1851,7 @@
 
   function checkScrollVisibility() {
     if (!assistantContainer || hasUnlockedAssistant) return;
-    
+
     // Check if user has scrolled to the absolute bottom of the page
     const scrollBottom = window.scrollY + window.innerHeight;
     const docHeight = document.documentElement.scrollHeight;
@@ -1808,151 +1892,235 @@
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    let width = 0;
-    let height = 0;
-    let particles = [];
+    const DPR = Math.min(window.devicePixelRatio || 1, 2);
+    let W = 0, H = 0;
+    let nodes = [], edges = [], pulses = [];
+    let t = 0;
     let isTyping = false;
-    let isThinkingState = false;
-    let sphereAngle = 0;
-    let typingTimer = null;
+    let currentState = false; // 'thinking' | 'executing' | false
+    let orbitProgress = 0; // 0 = idle dispersed, 1 = Siri orbital ring
 
-    window.miraSetThinkingState = function(thinking) {
-      isThinkingState = thinking;
-    };
+    const N = 28;
+    const CONN_DIST = 90;
+    const BASE_SPEED = 0.22;
+    const MAROON = [107, 26, 42];
+    const NAVY = [13, 27, 62];
+
+    function rgba(c, a) { return `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, a)).toFixed(3)})`; }
+
+    window.miraSetThinkingState = function (state) { currentState = state; };
+    window.miraSetTyping = function (val) { isTyping = val; };
 
     function resizeCanvas() {
       const parent = canvas.parentElement;
       if (!parent) return;
-      width = parent.clientWidth || 420;
-      height = parent.clientHeight || 70;
-      canvas.width = width * window.devicePixelRatio;
-      canvas.height = height * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+      W = parent.clientWidth || 420;
+      H = parent.clientHeight || 70;
+      canvas.width = W * DPR;
+      canvas.height = H * DPR;
+      ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
     }
-
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    const PARTICLE_COUNT = 34;
-    const MAX_DIST = 75;
+    function mkNode(i) {
+      const maroon = Math.random() > 0.5;
+      const angle = (i / N) * Math.PI * 2;
+      return {
+        x: Math.random() * (W || 420),
+        y: Math.random() * (H || 70),
+        vx: (Math.random() - 0.5) * BASE_SPEED,
+        vy: (Math.random() - 0.5) * BASE_SPEED,
+        baseVx: (Math.random() - 0.5) * BASE_SPEED,
+        baseVy: (Math.random() - 0.5) * BASE_SPEED,
+        r: Math.random() * 1.4 + 1.0,
+        maroon,
+        color: maroon ? MAROON : NAVY,
+        phase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.5 + Math.random() * 0.7,
+        ringAngle: angle
+      };
+    }
 
-    class Particle {
-      constructor(id) {
-        this.id = id;
-        this.reset();
-      }
+    for (let i = 0; i < N; i++) nodes.push(mkNode(i));
 
-      reset() {
-        this.x = Math.random() * (width || 400);
-        this.y = Math.random() * (height || 70);
-        this.vx = (Math.random() - 0.5) * 0.45;
-        this.vy = (Math.random() - 0.5) * 0.45;
-        this.radius = Math.random() * 1.5 + 1.0;
-        this.baseAlpha = Math.random() * 0.4 + 0.45;
-        this.alpha = this.baseAlpha;
-        const colors = ['#FFFFFF', '#D4A017', '#818CF8', '#F472B6', '#E2E8F0'];
-        this.color = colors[Math.floor(Math.random() * colors.length)];
-      }
+    function spawnPulse() {
+      if (pulses.length > 8 || edges.length === 0) return;
+      const e = edges[(Math.random() * edges.length) | 0];
+      pulses.push({ a: e.a, b: e.b, t: 0, speed: 0.006 + Math.random() * 0.008, color: e.a.maroon ? MAROON : NAVY });
+    }
 
-      update() {
-        if (isThinkingState) {
-          // AI THINKING: Form a tight neural ball and revolve fast
-          sphereAngle += 0.005;
-          const centerX = width / 2;
-          const centerY = height / 2;
+    function draw() {
+      t += 0.016;
+      const activeState = currentState || isTyping;
 
-          const ringRadius = 22 + (this.id % 5) * 6.5;
-          const particleAngle = sphereAngle * 18 + (this.id * (Math.PI * 2 / PARTICLE_COUNT));
+      // Smoothly interpolate Siri orbital ring transition
+      const targetOrbit = activeState ? 1 : 0;
+      orbitProgress += (targetOrbit - orbitProgress) * 0.022;
 
-          const targetX = centerX + Math.cos(particleAngle) * ringRadius;
-          const targetY = centerY + Math.sin(particleAngle) * (ringRadius * 0.65);
+      ctx.clearRect(0, 0, W, H);
 
-          this.x += (targetX - this.x) * 0.25;
-          this.y += (targetY - this.y) * 0.25;
-          this.alpha = 0.95;
-        } else if (isTyping) {
-          // KEYBOARD TYPING: Gravitate towards center point (width/2, height/2)
-          const targetX = width / 2;
-          const targetY = height / 2;
-          const dx = targetX - this.x;
-          const dy = targetY - this.y;
-          const dist = Math.hypot(dx, dy);
+      // Determine state color accents
+      let stateRgb = null;
+      if (currentState === 'executing') stateRgb = [248, 113, 113];      // Soft Red
+      else if (currentState === 'thinking') stateRgb = [96, 165, 250];    // Soft Blue
+      else if (isTyping) stateRgb = [74, 222, 128];                      // Soft Green
 
-          if (dist > 12) {
-            this.vx += (dx / dist) * 0.12;
-            this.vy += (dy / dist) * 0.12;
-            this.vx *= 0.88;
-            this.vy *= 0.88;
-          } else {
-            this.vx = -dy * 0.05;
-            this.vy = dx * 0.05;
-          }
-          this.alpha = Math.min(1.0, this.baseAlpha + 0.4);
-        } else {
-          // IDLE / DISPERSED: Ambient drift & gentle bounce
-          this.vx *= 0.98;
-          this.vy *= 0.98;
-          if (Math.abs(this.vx) < 0.15) this.vx += (Math.random() - 0.5) * 0.1;
-          if (Math.abs(this.vy) < 0.15) this.vy += (Math.random() - 0.5) * 0.1;
+      const ringR = Math.min(H * 0.36, 26);
+      const cx = W / 2;
+      const cy = H / 2;
+      const ringAngleOffset = t * 0.28;
 
-          this.alpha = this.baseAlpha;
+      // Update node positions
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
 
-          if (this.x < 0 || this.x > width) this.vx *= -1;
-          if (this.y < 0 || this.y > height) this.vy *= -1;
+        if (orbitProgress > 0.005) {
+          const angle = n.ringAngle + ringAngleOffset;
+          const tx = cx + Math.cos(angle) * ringR;
+          const ty = cy + Math.sin(angle) * (ringR * 0.45);
+          n.x += (tx - n.x) * (0.03 * orbitProgress);
+          n.y += (ty - n.y) * (0.03 * orbitProgress);
         }
 
-        this.x += this.vx;
-        this.y += this.vy;
+        if (orbitProgress < 0.995) {
+          n.vx += (n.baseVx - n.vx) * 0.015;
+          n.vy += (n.baseVy - n.vy) * 0.015;
+          const sp = Math.hypot(n.vx, n.vy);
+          if (sp > 2.0) { n.vx = (n.vx / sp) * 2.0; n.vy = (n.vy / sp) * 2.0; }
+          const driftAmt = 1 - orbitProgress;
+          n.x += n.vx * driftAmt;
+          n.y += n.vy * driftAmt;
+          if (n.x < 0) { n.x = 0; n.vx = Math.abs(n.vx) * 0.7; n.baseVx = Math.abs(n.baseVx); }
+          if (n.x > W) { n.x = W; n.vx = -Math.abs(n.vx) * 0.7; n.baseVx = -Math.abs(n.baseVx); }
+          if (n.y < 0) { n.y = 0; n.vy = Math.abs(n.vy) * 0.7; n.baseVy = Math.abs(n.baseVy); }
+          if (n.y > H) { n.y = H; n.vy = -Math.abs(n.vy) * 0.7; n.baseVy = -Math.abs(n.baseVy); }
+        }
       }
 
-      draw() {
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.globalAlpha = this.alpha;
-        ctx.shadowColor = this.color;
-        ctx.shadowBlur = 6;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        ctx.globalAlpha = 1.0;
-      }
-    }
-
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push(new Particle(i));
-    }
-
-    function animate() {
-      ctx.clearRect(0, 0, width, height);
-
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update();
-        particles[i].draw();
-
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.hypot(dx, dy);
-          const maxDist = isThinkingState ? 60 : (isTyping ? 95 : MAX_DIST);
-
-          if (dist < maxDist) {
-            const lineAlpha = (1 - dist / maxDist) * (isThinkingState ? 0.65 : (isTyping ? 0.45 : 0.24));
+      // Build edges and draw connection lines
+      edges = [];
+      ctx.lineCap = 'round';
+      const connDist = CONN_DIST * (1 + orbitProgress * 0.4);
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < connDist) {
+            const k = 1 - d / connDist;
+            const alpha = k * 0.38;
+            const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+            const colorA = (stateRgb && orbitProgress > 0.1) ? stateRgb : a.color;
+            const colorB = (stateRgb && orbitProgress > 0.1) ? stateRgb : b.color;
+            grad.addColorStop(0, rgba(colorA, alpha));
+            grad.addColorStop(1, rgba(colorB, alpha));
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 0.4 + k * 0.85;
             ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = isThinkingState ? 'rgba(255, 215, 0, ' + lineAlpha + ')' : (isTyping ? 'rgba(212, 160, 23, ' + lineAlpha + ')' : 'rgba(255, 255, 255, ' + lineAlpha + ')');
-            ctx.lineWidth = isThinkingState ? 1.4 : (isTyping ? 1.2 : 0.8);
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
             ctx.stroke();
+            if (k > 0.3) edges.push({ a, b, k });
           }
         }
       }
 
-      requestAnimationFrame(animate);
+      // Pulses along edges
+      if (Math.random() < 0.06) spawnPulse();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const p = pulses[i];
+        p.t += p.speed;
+        if (p.t >= 1) { pulses.splice(i, 1); continue; }
+        const x = p.a.x + (p.b.x - p.a.x) * p.t;
+        const y = p.a.y + (p.b.y - p.a.y) * p.t;
+        const fade = Math.sin(p.t * Math.PI);
+        const pulseColor = (stateRgb && orbitProgress > 0.1) ? stateRgb : p.color;
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 9);
+        g.addColorStop(0, rgba(pulseColor, 0.25 * fade));
+        g.addColorStop(1, rgba(pulseColor, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath();
+        ctx.arc(x, y, 9, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+
+      // Draw nodes (halos + cores + highlights)
+      for (const n of nodes) {
+        const pulse = 0.78 + 0.22 * Math.sin(t * n.pulseSpeed + n.phase);
+        const nodeColor = (stateRgb && orbitProgress > 0.1) ? stateRgb : n.color;
+        const haloR = (n.r + 5) * pulse;
+
+        const halo = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, haloR);
+        halo.addColorStop(0, rgba(nodeColor, 0.35 * pulse));
+        halo.addColorStop(1, rgba(nodeColor, 0));
+        ctx.fillStyle = halo;
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, haloR, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = rgba(nodeColor, 0.88);
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(n.x - n.r * 0.3, n.y - n.r * 0.3, n.r * 0.32, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
     }
 
-    animate();
+    draw();
+  })();
 
     const inputEl = document.getElementById('mosesInput');
+    let typingPauseTimer = null;
+    let startCompressTimer = null;
+
+    function applyOrganicTransition(isCompressing) {
+      if (!panel) return;
+      const duration = (isCompressing
+        ? (Math.random() * (0.54 - 0.44) + 0.44)
+        : (Math.random() * (0.64 - 0.52) + 0.52)
+      ).toFixed(3);
+
+      panel.style.transition = `height ${duration}s cubic-bezier(0.16, 1, 0.3, 1), max-height ${duration}s cubic-bezier(0.16, 1, 0.3, 1), transform ${duration}s cubic-bezier(0.16, 1, 0.3, 1), box-shadow ${duration}s ease`;
+    }
+
+    function expandWindow() {
+      if (startCompressTimer) {
+        clearTimeout(startCompressTimer);
+        startCompressTimer = null;
+      }
+      applyOrganicTransition(false);
+      panel.classList.remove('typing-shrink');
+      const discoverGrid = document.querySelector('.moses-discover-questions');
+      const groundedNote = document.querySelector('.moses-grounded-note');
+      if (discoverGrid) discoverGrid.classList.remove('typing-compress');
+      if (groundedNote) groundedNote.classList.remove('typing-compress');
+    }
+
+    function compressWindow() {
+      applyOrganicTransition(true);
+      panel.classList.add('typing-shrink');
+      const discoverGrid = document.querySelector('.moses-discover-questions');
+      const groundedNote = document.querySelector('.moses-grounded-note');
+      if (discoverGrid) discoverGrid.classList.add('typing-compress');
+      if (groundedNote) groundedNote.classList.add('typing-compress');
+    }
+
+    function getOrganicCompressDelay() {
+      return Math.floor(Math.random() * (480 - 160 + 1)) + 160;
+    }
+
+    function getOrganicPauseDelay() {
+      return Math.floor(Math.random() * (1550 - 1150 + 1)) + 1150;
+    }
+
     if (inputEl) {
       inputEl.addEventListener('input', () => {
         isTyping = true;
@@ -1960,7 +2128,50 @@
         typingTimer = setTimeout(() => {
           isTyping = false;
         }, 850);
+
+        const val = inputEl.value;
+        if (val.length > 0) {
+          if (!panel.classList.contains('typing-shrink') && !startCompressTimer) {
+            const compressDelay = getOrganicCompressDelay();
+            startCompressTimer = setTimeout(() => {
+              compressWindow();
+              startCompressTimer = null;
+            }, compressDelay);
+          }
+
+          if (typingPauseTimer) clearTimeout(typingPauseTimer);
+          const pauseDelay = getOrganicPauseDelay();
+          typingPauseTimer = setTimeout(() => {
+            expandWindow();
+          }, pauseDelay);
+        } else {
+          if (startCompressTimer) {
+            clearTimeout(startCompressTimer);
+            startCompressTimer = null;
+          }
+          if (typingPauseTimer) clearTimeout(typingPauseTimer);
+          expandWindow();
+        }
       });
+
+      inputEl.addEventListener('blur', () => {
+        if (startCompressTimer) {
+          clearTimeout(startCompressTimer);
+          startCompressTimer = null;
+        }
+        if (typingPauseTimer) clearTimeout(typingPauseTimer);
+        expandWindow();
+      });
+
+      if (form) {
+        form.addEventListener('submit', () => {
+          if (startCompressTimer) {
+            clearTimeout(startCompressTimer);
+            startCompressTimer = null;
+          }
+          if (typingPauseTimer) clearTimeout(typingPauseTimer);
+          expandWindow();
+        });
+      }
     }
   })();
-})();

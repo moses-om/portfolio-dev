@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables & secrets
+.env
+*.env
+.env.*
+
+# Private AI Chat Transcripts & Research Exports
+*_conversation.md
+*_conversation.txt
+*.transcript.*
+
+# Internal Benchmark, Red-Teaming & Staging Logs
+backend/*-results.json
+backend/data/candidate-promotion-log.json
+backend/data/backups/
+backend/test-grounding.js
+backend/scripts/review-candidates.js
+
+# Dedicated Sub-Project (Managed in its own separate repository)
+chatgpt-extractor/
+
+# OS & Editor artifacts
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
