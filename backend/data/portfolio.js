@@ -208,11 +208,11 @@ const portfolioData = {
       github: "https://github.com/moses-om/chatporter",
       stack: ["JavaScript (ES6+)", "Node.js", "TurboStream Deserialization", "In-Memory Stream Parsing", "Client-Side Privacy Pipeline"],
       problem: "Saving long ChatGPT conversations often fails via shared links due to client-side streaming hydration, while online export tools require uploading private text to unknown servers, risking data leaks of proprietary code and research notes.",
-      solution: "Engineered an in-memory streaming deserialization engine that decodes OpenAI TurboStream pointer graphs directly in RAM, converting complex conversations into polished Markdown, JSON, and text documents in under 1 second with 100% data privacy.",
+      solution: "Engineered an in-memory streaming decoding engine that extracts and structures ChatGPT conversations directly in volatile RAM, converting shared links into polished Markdown, JSON, and text documents in under 1 second with 100% data privacy.",
       impact: [
         "1-Click export to Markdown (.md), Plain Text (.txt), and JSON (.json) with complete code syntax preservation",
         "Zero-footprint in-memory architecture with zero database persistence and zero third-party telemetry",
-        "Bypasses client-side streaming hydration in < 1s without heavy headless browser overhead"
+        "Sub-second in-memory stream decoding with zero heavy browser overhead"
       ]
     },
     {

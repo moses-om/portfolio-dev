@@ -12,7 +12,16 @@
       "How would you describe Moses's area of professional expertise?",
       "Give me an overview of Moses's career and background.",
       "Who is Moses?",
-      "What is Moses's professional profile?"
+      "What is Moses's professional profile?",
+      "What would Moses bring to a data or BI engineering team?",
+      "How has Moses used data to solve real-world problems?",
+      "What can Moses solve in an organisation",
+      "what is moses areas of specialization",
+      "Would you say taht Moses is a mentor?",
+      "What projects are documented in my portfolio?",
+      "What synthesis of operations management and data analytics exists in Moses's background?",
+      "Where will Moses work next year?",
+      "RLS is important, how does Moses approach it?"
     ],
     "answer": "Moses Otieno Omondi is a Business Intelligence and Data Engineering Professional based in Nairobi, Kenya. He specializes in building end-to-end data pipelines, custom SQL schemas, automated ETL workflows, and interactive Power BI dashboards that help organizations translate complex data into strategic intelligence.",
     "source": "portfolio.identity.headline, portfolio.identity.tagline, portfolio.identity.location",
@@ -33,7 +42,11 @@
       "What kind of BI work has Moses done?",
       "What BI and data visualization tools does Moses use?",
       "What is Moses's experience with Power BI Service and DAX?",
-      "Does Moses use Tableau or Power BI?"
+      "Does Moses use Tableau or Power BI?",
+      "how will moses manage a situation where power bi service is extensively used than power bi desktop?",
+      "what methods does moses use to approach his analytical process from data to dashboards",
+      "How does Moses handle RLS in Power BI?",
+      "Compare Moses's Power BI work with his conversational AI research."
     ],
     "answer": "Yes, Power BI is a core competency. In his consulting engagement for Ashesi University and The Education Collaborative, Moses delivered a live Institutional Ranking System on Power BI Service. His expertise includes connecting Power BI to REST APIs (KoboToolbox), modeling relational data, implementing Row-Level Security (RLS), and writing advanced DAX measures (RANKX, time intelligence, dynamic KPI scoring).",
     "source": "portfolio.skills.businessIntelligence, portfolio.workExperience[0], portfolio.projects[0]",
@@ -54,7 +67,11 @@
       "Tell me about Moses's academic background.",
       "Where did Moses get his degree?",
       "What degree did Moses earn?",
-      "Tell me about Moses's degree & educational background."
+      "Tell me about Moses's degree & educational background.",
+      "do snhu students usually do GEM internships?",
+      "What is my degree?",
+      "State his Master's degree.",
+      "What is his degree?"
     ],
     "answer": "Moses holds a US-accredited Bachelor of Arts in Management with a specialization in Logistics & Operations from Southern New Hampshire University (SNHU) (2020–2023), completed via Kepler in Kigali, Rwanda. His degree covered strategic management, operations, project management, and parallel coursework in data analytics and Business Intelligence.",
     "source": "portfolio.education[0]",
@@ -73,7 +90,10 @@
       "What databases and SQL tools does Moses use?",
       "What is Moses's experience with MySQL and ETL workflows?",
       "Does Moses build SQL databases and ETL pipelines?",
-      "how did Moses acquire his data analysis skills"
+      "how did Moses acquire his data analysis skills",
+      "does moses know data analysis?",
+      "How does Moses's Power BI experience connect with his data engineering work?",
+      "Summarize Moses's end-to-end data pipeline lifecycle across BI, ETL, and AI research."
     ],
     "answer": "Moses designs relational database schemas (MySQL, RDBMS), automated ETL pipelines, and data cleaning workflows using SQL and Python (Pandas, BeautifulSoup). He built an Excel RDBMS dashboard for The Education Collaborative that reduced reporting time by ~80%, and is currently completing the IBM Data Engineering Professional Certificate.",
     "source": "portfolio.skills.dataEngineering, portfolio.workExperience[1], portfolio.certifications[0]",
@@ -91,7 +111,8 @@
       "What is Moses's role at Ashesi University?",
       "What consulting work has Moses done for Ashesi?",
       "Tell me about Moses's professional work experience.",
-      "What is Moses's employment history?"
+      "What is Moses's employment history?",
+      "what expirienc does moses have"
     ],
     "answer": "Moses serves as a Power BI Developer & Business Intelligence Consultant for Ashesi University and The Education Collaborative (Jul 2025 – Present). He previously worked as a Data & Research Analyst Intern for The Education Collaborative in Kigali, Rwanda, and as a Teaching Assistant for Kepler College's ITEME Refugee Programme in Nyabiheke Refugee Camp.",
     "source": "portfolio.workExperience[0], portfolio.workExperience[1], portfolio.workExperience[2]",
@@ -111,7 +132,9 @@
       "What research has Moses published?",
       "What academic papers and case studies has Moses written?",
       "Where has Moses published his research work?",
-      "where can i find his publisihed research paper on AI"
+      "where can i find his publisihed research paper on AI",
+      "Could Moses contribute to a research project? What areas of research is he interested in?",
+      "why would someone want to partner with moses for a research project?"
     ],
     "answer": "Yes. Moses has authored several published case studies and articles, including a 2025 higher education case study published on ResearchGate analyzing student learning outcomes (Kepler College), a 2023 healthcare reimbursement study published on SSRN (Spaulding Rehabilitation Network), and a logistics optimization paper on intermodal transport for Africa Global Logistics.",
     "source": "portfolio.research[0], portfolio.research[1], portfolio.research[2]",
@@ -145,7 +168,8 @@
       "What software does Moses use for data analytics?",
       "What AI and machine learning tools does Moses work with?",
       "What is Moses's experience with frontier AI models?",
-      "What tools are included in Moses's technical skillset?"
+      "What tools are included in Moses's technical skillset?",
+      "so Moses can actually build AI systems"
     ],
     "answer": "Moses's technical stack includes Power BI, SQL, MySQL, Python (Pandas, BeautifulSoup), SPSS, and Excel/VBA. As an Applied AI Specialist, he orchestrates frontier AI models (Gemini, Claude, ChatGPT, NotebookLM) and prompt engineering workflows to build intelligent analytics tools and automated data systems.",
     "source": "portfolio.skills.appliedAI, portfolio.skills.businessIntelligence, portfolio.skills.dataEngineering",
@@ -178,7 +202,13 @@
       "How quickly does DPOE respond?",
       "How much does DPOE reduce generative API usage?",
       "What is the AI architecture Moses researched?",
-      "how did moses build MIRA Intelligence?"
+      "how did moses build MIRA Intelligence?",
+      "What is the verified name of the architecture?",
+      "What is MIRA Intelligence?",
+      "What are DPOE's verified performance metrics?",
+      "What is the official name of the architecture?",
+      "What is the verified project name?",
+      "What does the paper say about MIRA Intelligence?"
     ],
     "answer": "MIRA Intelligence (Decoupled Portfolio Orchestration Engine — DPOE) is a zero-cost 4-tier conversational AI architecture detailed in Moses's 2026 research paper ('Evaluating a Multi-Layer Retrieval and Human-Validated Architecture for Cost-Efficient, Grounded Conversational AI'). Documented evaluation metrics include a 50% reduction in generative API calls, 15× faster response latency (303 ms vs 4,551 ms), and a 98.69% pass rate under security stress testing.",
     "source": "portfolio.research[0]",
@@ -192,7 +222,8 @@
       "What is the EA Hub Performance Dashboard?",
       "Tell me about the EA Hub project.",
       "What did Moses build for the East Africa Hub?",
-      "What tech stack was used in the EA Hub project?"
+      "What tech stack was used in the EA Hub project?",
+      "How do the Ashesi and EA Hub projects demonstrate Moses's BI capabilities?"
     ],
     "answer": "The EA Hub Performance Dashboard is a relational data analytics project Moses built for The Education Collaborative in Kigali, Rwanda. Using MySQL, Advanced Excel RDBMS, and SPSS, he consolidated multi-country strategic goals, reducing weekly reporting preparation time by ~80% and providing analytical input for published research.",
     "source": "portfolio.projects[1]",

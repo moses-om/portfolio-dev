@@ -1531,7 +1531,7 @@
       justify-content: center;
       opacity: 0;
       pointer-events: none;
-      transition: opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.42s ease;
+      transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), backdrop-filter 0.28s ease;
       padding: 1rem;
       box-sizing: border-box;
     }
@@ -1544,46 +1544,74 @@
     .modal-drawer {
       position: relative;
       z-index: 9996;
-      width: 100%;
-      max-width: 960px;
+      width: 95%;
+      max-width: 1140px;
       max-height: 90vh;
       background: var(--page-bg);
       border-radius: 12px;
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      -webkit-overflow-scrolling: touch;
-      will-change: max-width, width, max-height, transform;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
       box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45);
 
       /* FLIP Morphing Drop-Back Transform to Source Card */
-      transform: translate(var(--card-dx, 0px), var(--card-dy, 24px)) scale(0.25);
+      transform: translate(var(--card-dx, 0px), var(--card-dy, 24px)) scale(0.35);
       opacity: 0;
       transform-origin: center center;
-      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-                  max-width 0.48s cubic-bezier(0.16, 1, 0.3, 1),
-                  width 0.48s cubic-bezier(0.16, 1, 0.3, 1),
-                  max-height 0.48s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.48s cubic-bezier(0.16, 1, 0.3, 1);
-      isolation: isolate;
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-height 0.38s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.38s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .modal-overlay.open .modal-drawer {
       transform: translate(0, 0) scale(1);
       opacity: 1;
+      will-change: auto;
     }
 
     .modal-drawer.video-expanded {
-      max-width: 1280px !important;
-      width: 92vw !important;
+      max-width: 1360px !important;
+      width: 94vw !important;
       max-height: 94vh !important;
       box-shadow: 0 44px 110px rgba(0, 0, 0, 0.65), 0 0 50px rgba(107, 26, 42, 0.25) !important;
-      transition: transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
-                  opacity 0.38s cubic-bezier(0.16, 1, 0.3, 1),
-                  max-width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                  width 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                  max-height 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                  width 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                  max-height 0.5s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-content-scroll {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-y;
+      min-height: 0;
+      height: 100%;
+      position: relative;
+    }
+
+    .modal-content-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .modal-content-scroll::-webkit-scrollbar-track {
+      background: transparent;
+      margin: 8px 0;
+    }
+
+    .modal-content-scroll::-webkit-scrollbar-thumb {
+      background: rgba(107, 26, 42, 0.4);
+      border-radius: 4px;
+    }
+
+    .modal-content-scroll::-webkit-scrollbar-thumb:hover {
+      background: rgba(107, 26, 42, 0.8);
     }
 
     /* Staggered Video Playback Area Fitting (Whole window expands/shrinks first, video follows) */
@@ -1597,6 +1625,9 @@
       align-items: center;
       justify-content: center;
       min-height: 200px;
+      touch-action: pan-y;
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
       transition: border-radius 0.45s ease,
                   box-shadow 0.45s ease;
     }
@@ -1608,24 +1639,6 @@
                   box-shadow 0.65s ease;
     }
 
-    .modal-drawer::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .modal-drawer::-webkit-scrollbar-track {
-      background: transparent;
-      margin: 12px 0;
-    }
-
-    .modal-drawer::-webkit-scrollbar-thumb {
-      background: rgba(107, 26, 42, 0.4);
-      border-radius: 4px;
-    }
-
-    .modal-drawer::-webkit-scrollbar-thumb:hover {
-      background: rgba(107, 26, 42, 0.8);
-    }
-
     .modal-header {
       padding: 2rem 2.5rem 1.5rem;
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -1633,14 +1646,9 @@
       align-items: flex-start;
       justify-content: space-between;
       gap: 1rem;
-      position: sticky;
-      top: 0;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-      z-index: 10;
-      border-top-left-radius: 12px;
-      border-top-right-radius: 12px;
+      flex-shrink: 0;
+      background: var(--page-bg);
+      z-index: 20;
     }
 
     .modal-close {
@@ -1913,6 +1921,7 @@
       z-index: 9999;
       background: var(--page-bg);
       border-radius: 8px;
+      clip-path: inset(0 round 8px);
       width: 100%;
       max-width: 860px;
       max-height: 90vh;
@@ -1939,6 +1948,9 @@
       justify-content: space-between;
       border-bottom: 1px solid rgba(0, 0, 0, 0.08);
       flex-shrink: 0;
+      background: var(--page-bg);
+      border-top-left-radius: 8px;
+      border-top-right-radius: 8px;
     }
 
     .pdf-modal-title {
@@ -3109,11 +3121,13 @@
         </div>
         <button class="modal-close" onclick="closeModal(event)">✕</button>
       </div>
-      <div class="modal-hero-band" id="modalHeroBand">
-        <div class="thumb-bg" id="modalHeroThumb"></div>
-        <div class="modal-hero-label" id="modalHeroLabel"></div>
+      <div class="modal-content-scroll" id="modalContentScroll">
+        <div class="modal-hero-band" id="modalHeroBand">
+          <div class="thumb-bg" id="modalHeroThumb"></div>
+          <div class="modal-hero-label" id="modalHeroLabel"></div>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
       </div>
-      <div class="modal-body" id="modalBody"></div>
     </div>
   </div>
 
@@ -3147,7 +3161,7 @@
         Moses<br>
         <span class="line2">Omondi</span>
       </h1>
-      <p class="hero-title"><strong>Business Intelligence · Research & Quantitative Analytics</strong></p>
+      <p class="hero-title"><strong>Business Intelligence · Research & Quantitative Analytics · Agentic Orchestration</strong></p>
       <p class="hero-title hero-title-2">Data Engineering · Analytics Consulting</p>
       <div class="hero-location">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3635,7 +3649,7 @@
         <div class="project-body">
           <div class="project-tags"><span class="ptag dev">Privacy Tooling</span><span class="ptag dev">In-Memory Engine</span></div>
           <div class="project-name">ChatPorter — In-Memory ChatGPT Extractor</div>
-          <div class="project-desc">A privacy-first in-memory engine that instantly extracts, decodes, and exports shared ChatGPT conversations into Markdown, JSON, and text with zero data leakage.</div>
+          <div class="project-desc">Extracts and structures ChatGPT shared links using sub-second in-memory stream decoding. Exports clean Markdown, JSON, or Plain Text in RAM with zero digital footprint.</div>
           <div class="project-footer">
             <div class="project-stack"><span class="stack-pill">Node.js</span><span class="stack-pill">TurboStream Deserializer</span><span class="stack-pill">100% In-Memory</span><span class="stack-pill">Zero Database</span></div>
             <button class="project-link" onclick="event.stopPropagation();openProject('chatporter', event)">View →</button>
@@ -4591,9 +4605,9 @@
         type: 'Development · Privacy Data Pipeline & Tooling',
         title: 'ChatPorter — In-Memory ChatGPT Conversation Extractor',
         bg: 'linear-gradient(135deg,#071024 0%,#0D1B3E 50%,#064E3B 100%)',
-        label: '⚡ In-Memory TurboStream Deserialization · Zero Digital Footprint',
+        label: '⚡ Sub-Second In-Memory Stream Decoding · Zero Digital Footprint',
         problem: 'While compiling technical notes and engineering logs for research papers and AI pipelines, I hit two major roadblocks. First, shared web links from ChatGPT often fail to load properly or break due to client-side streaming hydration. Second — and most crucially — third-party export services require uploading conversations to external servers, creating unacceptable privacy and intellectual property risks for proprietary code and confidential system architectures.',
-        solution: 'I engineered ChatPorter, a privacy-first in-memory extraction engine built with Node.js. Instead of relying on slow headless browser emulation or third-party cloud scrapers, ChatPorter directly decodes OpenAI TurboStream pointer graphs in volatile RAM in under 1 second — exporting conversations into clean Markdown, JSON, and text with zero digital footprint.',
+        solution: 'I engineered ChatPorter, a privacy-first in-memory extraction engine built with Node.js. Instead of relying on slow headless browser emulation or third-party cloud scrapers, ChatPorter decodes shared conversation streams directly in volatile RAM in under 1 second — exporting clean Markdown, JSON, and text with zero digital footprint.',
         impact: [
           '1-Click Export: Converts shared ChatGPT conversations into clean Markdown (.md), Plain Text (.txt), and JSON (.json) in < 1 second',
           '100% In-Memory Privacy: Operates entirely in volatile RAM with zero database persistence, zero cookies, and zero third-party telemetry',
@@ -4627,37 +4641,23 @@
       let stageTimer = null;
 
       function ensureVideoInView() {
-        const drawer = document.getElementById('modalDrawer');
-        if (!drawer) return;
-        const mediaWrapper = drawer.querySelector('.modal-media-wrapper') || document.getElementById('ytProjectIframe') || document.getElementById('carouselMediaContainer');
+        const scrollArea = document.getElementById('modalContentScroll') || document.getElementById('modalDrawer');
+        if (!scrollArea) return;
+        const mediaWrapper = scrollArea.querySelector('.modal-media-wrapper') || document.getElementById('ytProjectIframe') || document.getElementById('carouselMediaContainer');
         if (mediaWrapper) {
-          const drawerRect = drawer.getBoundingClientRect();
+          const areaRect = scrollArea.getBoundingClientRect();
           const wrapperRect = mediaWrapper.getBoundingClientRect();
-          const targetScroll = drawer.scrollTop + (wrapperRect.top - drawerRect.top) - 130;
-          drawer.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
+          // Scroll down to fit the expanded video cleanly in the center of the viewport
+          const targetScroll = scrollArea.scrollTop + (wrapperRect.top - areaRect.top) - 24;
+          scrollArea.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
         }
       }
 
       function setVideoHDQuality() {
+        // Safe, passive quality preference without thrashing the YouTube buffer stream
         if (ytPlayerInstance && ytPlayerInstance.setPlaybackQuality) {
           try {
-            ytPlayerInstance.setPlaybackQuality('hd1080');
-          } catch (e) { }
-        }
-
-        const iframe = document.getElementById('ytProjectIframe') || document.getElementById('ytLightboxIframe');
-        if (iframe && iframe.contentWindow) {
-          try {
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command',
-              func: 'setPlaybackQuality',
-              args: ['hd1080']
-            }), '*');
-            iframe.contentWindow.postMessage(JSON.stringify({
-              event: 'command',
-              func: 'setPlaybackQualityRange',
-              args: ['hd1080', 'highres']
-            }), '*');
+            ytPlayerInstance.setPlaybackQuality('default');
           } catch (e) { }
         }
       }
@@ -4679,13 +4679,9 @@
               mediaWrapper.classList.add('media-expanded');
             }
 
-            // Programmatically request HD 1080p stream upon window expansion
-            setVideoHDQuality();
-            setTimeout(setVideoHDQuality, 300);
-            setTimeout(setVideoHDQuality, 750);
-
             ensureVideoInView();
-            setTimeout(ensureVideoInView, 350);
+            setTimeout(ensureVideoInView, 250);
+            setTimeout(ensureVideoInView, 550);
           }
         }, 580);
       }
@@ -4725,7 +4721,6 @@
       }
 
       let ytPlayerInstance = null;
-      let ytCheckInterval = null;
 
       function checkRemainingTime(dur, cur) {
         if (dur && cur && dur > 0 && cur > 0) {
@@ -4733,24 +4728,6 @@
           if (rem <= 8.2 && rem > 0) {
             collapseVideoExpansion();
           }
-        }
-      }
-
-      function startVideoEndCheck() {
-        if (ytCheckInterval) clearInterval(ytCheckInterval);
-        ytCheckInterval = setInterval(() => {
-          if (ytPlayerInstance && ytPlayerInstance.getCurrentTime && ytPlayerInstance.getDuration) {
-            try {
-              checkRemainingTime(ytPlayerInstance.getDuration(), ytPlayerInstance.getCurrentTime());
-            } catch (e) { }
-          }
-        }, 300);
-      }
-
-      function stopVideoEndCheck() {
-        if (ytCheckInterval) {
-          clearInterval(ytCheckInterval);
-          ytCheckInterval = null;
         }
       }
 
@@ -4768,12 +4745,6 @@
 
         document.removeEventListener('mousemove', onMediaMouseMove);
         document.addEventListener('mousemove', onMediaMouseMove);
-
-        // Immediately request HD 1080p stream as soon as playback starts
-        setVideoHDQuality('hd1080');
-        setTimeout(() => setVideoHDQuality('hd1080'), 250);
-
-        startVideoEndCheck();
 
         // Prevent restarting the 14s timer if it is ALREADY running or drawer is ALREADY expanded!
         if (videoTimer || (drawer && drawer.classList.contains('video-expanded'))) {
@@ -4817,7 +4788,6 @@
 
         // Only collapse expansion if explicitly forced (modal close/slide change/8s before end/ended)
         if (forceCollapse) {
-          stopVideoEndCheck();
           collapseVideoExpansion();
         }
       }
@@ -4860,7 +4830,14 @@
       window.initYouTubeModalPlayer = function (iframeEl) {
         if (!iframeEl) return;
 
+        if (ytPlayerInstance && ytPlayerInstance.destroy) {
+          try { ytPlayerInstance.destroy(); } catch (e) { }
+          ytPlayerInstance = null;
+        }
+
+        let isAttached = false;
         function attachYT() {
+          if (isAttached) return;
           if (window.YT && window.YT.Player) {
             try {
               ytPlayerInstance = new window.YT.Player(iframeEl, {
@@ -4876,6 +4853,7 @@
                   }
                 }
               });
+              isAttached = true;
             } catch (err) { }
           }
         }
@@ -4883,8 +4861,7 @@
         if (window.YT && window.YT.Player) {
           attachYT();
         } else {
-          setTimeout(attachYT, 600);
-          setTimeout(attachYT, 1800);
+          setTimeout(attachYT, 350);
         }
       };
     })();
@@ -4899,8 +4876,7 @@
       const match = src.match(/(?:youtube\.com\/(?:embed\/|v\/|watch\?v=)|youtu\.be\/)([^?#&]+)/i);
       if (match && match[1]) {
         const videoId = match[1];
-        const origin = window.location.origin ? encodeURIComponent(window.location.origin) : '';
-        const cleanSrc = `https://www.youtube-nocookie.com/embed/${videoId}?enablejsapi=1&rel=0&playsinline=1&vq=hd1080${origin ? '&origin=' + origin : ''}`;
+        const cleanSrc = `https://www.youtube.com/embed/${videoId}?enablejsapi=1`;
         const iframeAttr = !isLightbox ? 'id="ytProjectIframe"' : '';
         return `<iframe ${iframeAttr} src="${cleanSrc}" style="${isLightbox ? 'max-width:90vw; max-height:85vh; width:880px; aspect-ratio:16/9; border-radius:8px; box-shadow:0 16px 50px rgba(0,0,0,0.6); border:none;' : 'width:100%; aspect-ratio:16/9; display:block; border-radius:6px; border:none;'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
       } else {
@@ -4983,12 +4959,14 @@
 
       updateLightboxMedia(src);
       document.getElementById('lightboxOverlay').classList.add('open');
+      syncBodyScrollLock();
     }
 
     function closeLightbox() {
       if (window.resetVideoExpansion) window.resetVideoExpansion(true);
       const overlay = document.getElementById('lightboxOverlay');
       overlay.classList.remove('open');
+      syncBodyScrollLock();
 
       // Sync underneath carousel cleanly upon closing lightbox (prevents double playing iframe stutter)
       const src = currentImages[currentImgIndex];
@@ -5013,6 +4991,7 @@
         if (!overlay.classList.contains('open')) {
           document.getElementById('lightboxContent').innerHTML = '';
         }
+        syncBodyScrollLock();
       }, 350);
     }
 
@@ -5104,6 +5083,7 @@
     </div>
     <div>
       <div class="modal-section-label">Project Visuals</div>
+      <div style="font-size:0.94rem; color:var(--text-secondary); margin-bottom:0.65rem; display:flex; align-items:center; gap:0.4rem;"><span style="color:var(--maroon); font-weight:700; font-size:1.05rem;">›</span> <span>For best results, Click <strong>'Watch on YouTube'</strong></span></div>
       ${imageHTML}
       ${portfolioEmbed}
     </div>
@@ -5120,29 +5100,46 @@
     </div>
   `;
 
+      const scrollArea = document.getElementById('modalContentScroll');
+      if (scrollArea) scrollArea.scrollTop = 0;
+
       document.getElementById('modalOverlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
+      syncBodyScrollLock();
 
       setTimeout(() => {
         const ytIframe = document.getElementById('ytProjectIframe');
         if (ytIframe && window.initYouTubeModalPlayer) {
           window.initYouTubeModalPlayer(ytIframe);
         }
-      }, 300);
+      }, 120);
+    }
+
+    function syncBodyScrollLock() {
+      const isProjectModalOpen = document.getElementById('modalOverlay')?.classList.contains('open');
+      const isPdfModalOpen = document.getElementById('pdfOverlay')?.classList.contains('open');
+      const isLightboxOpen = document.getElementById('lightboxOverlay')?.classList.contains('open');
+      if (isProjectModalOpen || isPdfModalOpen || isLightboxOpen) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
     }
 
     function closeModal(e) {
       if (e && e.target !== document.getElementById('modalOverlay') && e.type !== 'keydown' && e.currentTarget.className !== 'modal-close') return;
       const overlay = document.getElementById('modalOverlay');
       overlay.classList.remove('open');
-      document.body.style.overflow = '';
+      syncBodyScrollLock();
       if (window.resetVideoExpansion) window.resetVideoExpansion();
       const iframes = overlay.querySelectorAll('iframe');
       iframes.forEach(iframe => iframe.remove());
       setTimeout(() => {
         if (!overlay.classList.contains('open')) {
           document.getElementById('modalBody').innerHTML = '';
+          const scrollArea = document.getElementById('modalContentScroll');
+          if (scrollArea) scrollArea.scrollTop = 0;
         }
+        syncBodyScrollLock();
       }, 350);
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(e); closeLightbox(); closePDF(e); } });
@@ -5234,19 +5231,20 @@
     `;
       }
       document.getElementById('pdfOverlay').classList.add('open');
-      document.body.style.overflow = 'hidden';
+      syncBodyScrollLock();
     }
     function closePDF(e) {
       if (e && e.target !== document.getElementById('pdfOverlay') && e.type !== 'keydown' && e.currentTarget.className !== 'pdf-modal-close') return;
       const overlay = document.getElementById('pdfOverlay');
       overlay.classList.remove('open');
-      document.body.style.overflow = '';
+      syncBodyScrollLock();
       const iframes = overlay.querySelectorAll('iframe');
       iframes.forEach(iframe => iframe.remove());
       setTimeout(() => {
         if (!overlay.classList.contains('open')) {
           document.getElementById('pdfBody').innerHTML = '';
         }
+        syncBodyScrollLock();
       }, 350);
     }
 

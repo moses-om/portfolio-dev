@@ -6,18 +6,31 @@ package-lock.json
 .env
 *.env
 .env.*
+**/.env
+
+# Local Snapshots & Historical Backups
+backups/
+backend/data/backups/
+
+# Runtime Ephemeral Candidate Cache & Audit Logs
+backend/data/candidate-cache.json
+backend/data/candidate-promotion-log.json
+backend/*-results.json
+backend/test-grounding.js
 
 # Private AI Chat Transcripts & Research Exports
 *_conversation.md
 *_conversation.txt
 *.transcript.*
+*.docx
 
-# Internal Benchmark, Red-Teaming & Staging Logs
-backend/*-results.json
-backend/data/candidate-promotion-log.json
-backend/data/backups/
-backend/test-grounding.js
-backend/scripts/review-candidates.js
+# Local Research Generation Scripts & Utilities
+build_research_papers.py
+generate_all_papers.py
+generate_ieee_2col.py
+
+# Workspace Agent Customization
+.agents/
 
 # Dedicated Sub-Project (Managed in its own separate repository)
 chatgpt-extractor/
@@ -28,3 +41,4 @@ Thumbs.db
 *.log
 .vscode/
 .idea/
+

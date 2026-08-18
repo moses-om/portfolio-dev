@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MIRA Knowledge Governance Console</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="admin.css?v=2.5">
+</head>
+
+<body class="admin-body">
+  <div class="glow-orb glow-orb-1"></div>
+  <div class="glow-orb glow-orb-2"></div>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="brand-badge">MIRA DPOE</div>
+        <div>
+          <h1 class="brand-title">MIRA KNOWLEDGE GOVERNANCE CONSOLE <span class="brand-admin-tag">(FOR ADMIN USE ONLY)</span></h1>
+          <p class="brand-subtitle">Human Verification & Provenance Control Center</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div class="system-status" id="systemStatusBadge">
+          <span class="status-dot"></span>
+          <span id="statusText">Connecting...</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" id="refreshAllBtn" title="Reload all data">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+          Refresh Data
+        </button>
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm" title="View my digital portfolio">
+          My Digital Portfolio ↗
+        </a>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" data-tab="queue">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+        Candidate Queue
+        <span class="tab-badge" id="queueTabCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="batch">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+        </svg>
+        Batch Workstation
+        <span class="tab-badge badge-orange" id="batchTabCount">0</span>
+      </button>
+      <button class="nav-tab" data-tab="faqs">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+        </svg>
+        Canonical FAQs
+        <span class="tab-badge" id="faqsTabCount">13</span>
+      </button>
+      <button class="nav-tab" data-tab="provenance">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
+        Provenance Audit Log
+        <span class="tab-badge" id="logTabCount">0</span>
+      </button>
+    </nav>
+
+    <!-- Top KPI Strip -->
+    <section class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Candidates</div>
+        <div class="kpi-val" id="kpiCandidates">0</div>
+        <div class="kpi-sub">Staged in Tier 3</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Verified FAQs</div>
+        <div class="kpi-val" id="kpiFaqs">0</div>
+        <div class="kpi-sub">Tier 2 Ground Truth</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Question Variants</div>
+        <div class="kpi-val" id="kpiVariants">0</div>
+        <div class="kpi-sub">Exact Cache Matchers</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Decisions Logged</div>
+        <div class="kpi-val" id="kpiDecisions">0</div>
+        <div class="kpi-sub">Audit Trail Records</div>
+      </div>
+      <div class="kpi-card kpi-highlight">
+        <div class="kpi-label">Eligible for Review</div>
+        <div class="kpi-val text-orange" id="kpiEligible">0</div>
+        <div class="kpi-sub">Duplicates & Syntheses</div>
+      </div>
+    </section>
+
+    <!-- Classification Breakdown Banner -->
+    <section class="classification-strip">
+      <div class="strip-item" data-cls="CANONICAL_DUPLICATE">
+        <span class="cls-tag tag-duplicate">CANONICAL_DUPLICATE</span>
+        <span class="cls-num" id="clsCountDuplicate">0</span>
+      </div>
+      <div class="strip-item" data-cls="CANONICAL_SUPPORTED_SYNTHESIS">
+        <span class="cls-tag tag-synthesis">SUPPORTED_SYNTHESIS</span>
+        <span class="cls-num" id="clsCountSynthesis">0</span>
+      </div>
+      <div class="strip-item" data-cls="REQUIRES_REVIEW">
+        <span class="cls-tag tag-review">REQUIRES_REVIEW</span>
+        <span class="cls-num" id="clsCountReview">0</span>
+      </div>
+      <div class="strip-item" data-cls="GUARDRAIL_RESPONSE">
+        <span class="cls-tag tag-guardrail">GUARDRAIL_RESPONSE</span>
+        <span class="cls-num" id="clsCountGuardrail">0</span>
+      </div>
+      <div class="strip-item" data-cls="OUT_OF_SCOPE">
+        <span class="cls-tag tag-scope">OUT_OF_SCOPE</span>
+        <span class="cls-num" id="clsCountScope">0</span>
+      </div>
+    </section>
+
+    <!-- TAB 1: CANDIDATE QUEUE -->
+    <section class="tab-pane active" id="paneQueue">
+      <div class="toolbar">
+        <div class="filter-group">
+          <label class="filter-label">Status:</label>
+          <div class="segmented-control" id="statusFilterControl">
+            <button class="seg-btn active" data-val="ALL">All</button>
+            <button class="seg-btn" data-val="PENDING">Pending</button>
+            <button class="seg-btn" data-val="PROMOTED">Promoted</button>
+            <button class="seg-btn" data-val="REJECTED">Rejected</button>
+            <button class="seg-btn" data-val="KEEP_FOR_REVIEW">Keep for Review</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label class="filter-label">Classification:</label>
+          <select class="form-select" id="classificationFilterSelect">
+            <option value="ALL">All Classifications</option>
+            <option value="CANONICAL_DUPLICATE">Canonical Duplicate</option>
+            <option value="CANONICAL_SUPPORTED_SYNTHESIS">Supported Synthesis</option>
+            <option value="REQUIRES_REVIEW">Requires Review</option>
+            <option value="GUARDRAIL_RESPONSE">Guardrail Response</option>
+            <option value="OUT_OF_SCOPE">Out of Scope</option>
+          </select>
+        </div>
+
+        <div class="search-box">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input type="text" class="search-input" id="queueSearchInput"
+            placeholder="Search candidate ID, query or answer..." autocomplete="off" spellcheck="false">
+          <button type="button" class="search-clear-btn" id="queueSearchClearBtn" title="Clear search" style="display: none;">✕</button>
+        </div>
+      </div>
+
+      <!-- Queue Table / Cards -->
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 200px; text-align: left; padding-left: 18px;">Candidate ID</th>
+              <th style="text-align: center; padding-left: 8px;">Original Query</th>
+              <th style="width: 190px; text-align: center;">Classification</th>
+              <th style="width: 130px; text-align: center;">Recommendation</th>
+              <th style="width: 110px; text-align: center;">Status</th>
+              <th style="width: 90px; text-align: center;">Action</th>
+            </tr>
+          </thead>
+          <tbody id="candidateTableBody">
+            <tr>
+              <td colspan="6" class="text-center py-5 text-muted">Loading candidate repository...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div class="pagination-bar">
+        <div class="pagination-info" id="paginationInfo">Showing 0 of 0 candidates</div>
+        <div class="pagination-controls">
+          <button class="btn btn-secondary btn-sm" id="prevPageBtn" disabled>← Previous</button>
+          <span class="page-indicator" id="pageIndicator">Page 1 of 1</span>
+          <button class="btn btn-secondary btn-sm" id="nextPageBtn" disabled>Next →</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BATCH WORKSTATION -->
+    <section class="tab-pane" id="paneBatch">
+      <div class="batch-wrapper">
+        <!-- Batch Header -->
+        <div class="batch-top-bar">
+          <div class="batch-title-block">
+            <span class="batch-chip">FOCUSED BATCH REVIEW</span>
+            <h2 class="batch-heading" id="batchHeading">Batch Review (Eligible Candidates)</h2>
+          </div>
+          <div class="batch-controls-group">
+            <div class="batch-size-selector">
+              <label class="filter-label">Batch:</label>
+              <div class="segmented-control" id="batchSizeControl">
+                <button class="seg-btn" data-size="5">5</button>
+                <button class="seg-btn" data-size="10">10</button>
+                <button class="seg-btn active" data-size="25">25</button>
+                <button class="seg-btn" data-size="50">50</button>
+                <button class="seg-btn" data-size="custom">Custom</button>
+              </div>
+              <input type="number" id="customBatchSizeInput" class="custom-size-input" min="1" max="100" placeholder="#" style="display: none;" title="Custom batch size (1-100)">
+            </div>
+            <button class="btn btn-secondary btn-sm" id="batchRestartBtn" title="Fetch fresh batch with selected size">Fetch Batch ↻</button>
+          </div>
+          <div class="batch-progress-block">
+            <div class="progress-labels">
+              <span id="batchProgressLabel">Candidate 0 of 0</span>
+              <span class="shortcut-tip">Shortcuts: <b>P</b> = Promote | <b>R</b> = Reject | <b>K</b> = Keep |
+                <b>←/→</b> = Nav</span>
+            </div>
+            <div class="progress-track">
+              <div class="progress-fill" id="batchProgressFill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workstation Layout -->
+        <div class="workstation-container" id="workstationContainer">
+          <!-- Left Column: Candidate & Answer -->
+          <div class="ws-col ws-left">
+            <div class="card ws-card">
+              <div class="card-header">
+                <div class="card-title">CANDIDATE QUERY & METRICS</div>
+                <span class="status-pill pill-neutral" id="wsCandidateStatus">PENDING</span>
+              </div>
+              <div class="card-body">
+                <div class="meta-row">
+                  <div class="meta-field">
+                    <span class="meta-label">Candidate ID</span>
+                    <span class="meta-value font-mono" id="wsCandidateId">-</span>
+                  </div>
+                  <div class="meta-field">
+                    <span class="meta-label">Confidence</span>
+                    <span class="meta-value font-mono" id="wsConfidenceScore" style="text-align: center;">-</span>
+                  </div>
+                  <div class="meta-field" style="margin-left: 24px; align-items: center; text-align: center;">
+                    <span class="meta-label">Model Used</span>
+                    <span class="meta-value" id="wsModelUsed">-</span>
+                  </div>
+                </div>
+
+                <div class="query-box">
+                  <span class="query-label">Visitor Query:</span>
+                  <div class="query-text" id="wsOriginalQuery">-</div>
+                </div>
+
+                <div class="answer-box">
+                  <span class="answer-label">Generated Response (Layer 4 LLM):</span>
+                  <div class="answer-text" id="wsCandidateAnswer">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Governance Metadata & FAQ Mapping -->
+          <div class="ws-col ws-right">
+            <div class="card ws-card">
+              <div class="card-header">
+                <div class="card-title">GOVERNANCE & ACTION</div>
+                <div class="badge-row" id="wsClassificationTag">
+                  <span class="cls-tag tag-duplicate">CANONICAL_DUPLICATE</span>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="gov-meta-grid">
+                  <div class="gov-field">
+                    <span class="meta-label">Query Nature</span>
+                    <span class="gov-val font-semibold" id="wsQueryNature">-</span>
+                  </div>
+                  <div class="gov-field">
+                    <span class="meta-label">Recommendation</span>
+                    <span class="gov-val font-semibold text-green" id="wsRecommendation">PROMOTE</span>
+                  </div>
+                  <div class="gov-field full-width">
+                    <span class="meta-label">Governance Reason</span>
+                    <span class="gov-val text-muted" id="wsReason">-</span>
+                  </div>
+                  <div class="gov-field full-width">
+                    <span class="meta-label">Grounding Evidence</span>
+                    <span class="gov-val font-mono" id="wsGroundingEvidence" style="font-size: 11px;">-</span>
+                  </div>
+                </div>
+
+                <!-- Target FAQ Selector -->
+                <div class="faq-target-section">
+                  <label class="filter-label" for="wsFaqSelect">Target Canonical FAQ Destination:</label>
+                  <select class="form-select full-width" id="wsFaqSelect">
+                    <option value="">-- Select Destination FAQ --</option>
+                  </select>
+
+                  <!-- Dynamic Preview of Selected FAQ -->
+                  <div class="faq-preview-box" id="wsFaqPreviewBox">
+                    <div class="faq-preview-title" id="wsFaqPreviewTitle">Target FAQ: None Selected</div>
+                    <div class="faq-preview-answer" id="wsFaqPreviewAnswer">Select an FAQ above to inspect canonical
+                      answer.</div>
+                    <div class="faq-preview-variants-count" id="wsFaqVariantsCount">0 existing variants in cache</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Decision Controls Bar -->
+            <div class="action-panel">
+              <button class="btn btn-secondary" id="wsPrevBtn">← Prev</button>
+              <button class="btn btn-danger" id="wsRejectBtn">✕ Reject</button>
+              <button class="btn btn-warning" id="wsKeepBtn">◉ Keep for Review</button>
+              <button class="btn btn-success" id="wsPromoteBtn">✓ Promote Variant</button>
+              <button class="btn btn-secondary" id="wsNextBtn">Next →</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Batch Complete Screen (Hidden by default) -->
+        <div class="batch-complete-screen" id="batchCompleteScreen" style="display: none;">
+          <div class="complete-card">
+            <div class="complete-icon">✓</div>
+            <h2 class="complete-title">BATCH REVIEW COMPLETE</h2>
+            <p class="complete-desc" id="batchCompleteDesc">You have reviewed all candidates in this batch.</p>
+            <div class="complete-stats">
+              <div class="complete-stat-item">
+                <span class="c-val text-green" id="batchStatPromoted">0</span>
+                <span class="c-lbl">Promoted</span>
+              </div>
+              <div class="complete-stat-item">
+                <span class="c-val text-red" id="batchStatRejected">0</span>
+                <span class="c-lbl">Rejected</span>
+              </div>
+              <div class="complete-stat-item">
+                <span class="c-val text-yellow" id="batchStatKept">0</span>
+                <span class="c-lbl">Kept for Review</span>
+              </div>
+              <div class="complete-stat-item">
+                <span class="c-val text-muted" id="batchStatRemaining">0</span>
+                <span class="c-lbl">Remaining</span>
+              </div>
+            </div>
+            <div class="complete-batch-size-row">
+              <span class="filter-label">Next Batch Size:</span>
+              <div class="segmented-control" id="completeBatchSizeControl">
+                <button class="seg-btn" data-size="5">5</button>
+                <button class="seg-btn" data-size="10">10</button>
+                <button class="seg-btn active" data-size="25">25</button>
+                <button class="seg-btn" data-size="50">50</button>
+                <button class="seg-btn" data-size="custom">Custom</button>
+              </div>
+              <input type="number" id="completeCustomBatchSizeInput" class="custom-size-input" min="1" max="100" placeholder="#" style="display: none;" title="Custom batch size (1-100)">
+            </div>
+            <div class="complete-actions">
+              <button class="btn btn-primary" id="batchReviewRemainingBtn">Review Next 25 Candidates</button>
+              <button class="btn btn-secondary" id="batchReturnQueueBtn">Return to Queue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: CANONICAL FAQS -->
+    <section class="tab-pane" id="paneFaqs">
+      <div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+        <div>
+          <h2 class="section-title">Verified Canonical FAQ Ground Truth</h2>
+          <p class="section-subtitle">Layer 2 Local In-Memory Fast Cache (Full Interactive Registry & Editor)</p>
+        </div>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="search-box" style="width: 260px;">
+            <input type="text" class="search-input" id="faqSearchInput" placeholder="Search FAQs or variants...">
+          </div>
+          <button class="btn btn-primary" id="openAddFaqModalBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            + Add Canonical FAQ
+          </button>
+        </div>
+      </div>
+      <div class="faqs-grid" id="faqsContainer">
+        <!-- Rendered dynamically -->
+      </div>
+    </section>
+
+    <!-- TAB 4: PROVENANCE AUDIT LOG -->
+    <section class="tab-pane" id="paneProvenance">
+      <div class="toolbar">
+        <div class="filter-group">
+          <label class="filter-label">Filter Decision:</label>
+          <div class="segmented-control" id="logFilterControl">
+            <button class="seg-btn active" data-val="ALL">All Decisions</button>
+            <button class="seg-btn" data-val="PROMOTED">Promoted</button>
+            <button class="seg-btn" data-val="REJECTED">Rejected</button>
+            <button class="seg-btn" data-val="KEEP_FOR_REVIEW">Kept for Review</button>
+          </div>
+        </div>
+        <div class="search-box">
+          <input type="text" class="search-input" id="logSearchInput" placeholder="Filter audit trail...">
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="width: 160px; text-align: left; padding-left: 16px;">Timestamp</th>
+              <th style="width: 110px; text-align: center;">Decision</th>
+              <th style="width: 200px; text-align: left; padding-left: 16px;">Candidate ID</th>
+              <th style="text-align: center; padding-left: 8px;">Original Query</th>
+              <th style="width: 170px; text-align: center;">Destination FAQ</th>
+              <th style="width: 180px; text-align: center;">Classification</th>
+            </tr>
+          </thead>
+          <tbody id="logTableBody">
+            <tr>
+              <td colspan="6" class="text-center py-5 text-muted">Loading audit log...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <!-- DRY-RUN CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="actionModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-badge" id="modalActionBadge">PROPOSED ACTION</div>
+        <h3 class="modal-title" id="modalTitle">Confirm Action</h3>
+        <button class="modal-close" id="modalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="dry-run-preview" id="modalPreview">
+          <!-- Dynamic action summary -->
+        </div>
+        <div class="dry-run-alert" id="modalAlert">
+          <!-- Safety notice -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="modalConfirmBtn">Confirm & Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ CREATE / EDIT MODAL -->
+  <div class="modal-backdrop" id="faqEditModal" style="display: none;">
+    <div class="modal-dialog" style="max-width: 620px;">
+      <div class="modal-header">
+        <div class="modal-badge" id="faqModalBadge" style="background: var(--maroon);">CANONICAL FAQ</div>
+        <h3 class="modal-title" id="faqModalTitle">Edit Canonical FAQ</h3>
+        <button class="modal-close" id="faqModalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body" style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div>
+            <label class="filter-label" for="faqFormId">FAQ Identifier (Key):</label>
+            <input type="text" id="faqFormId" class="search-input" style="width: 100%; font-family: monospace;" placeholder="e.g. power_bi_rls">
+          </div>
+          <div>
+            <label class="filter-label" for="faqFormCategory">Category:</label>
+            <input type="text" id="faqFormCategory" class="search-input" style="width: 100%;" placeholder="e.g. Skills & Tools">
+          </div>
+        </div>
+        <div>
+          <label class="filter-label" for="faqFormAnchor">Portfolio Section Anchor (Optional):</label>
+          <input type="text" id="faqFormAnchor" class="search-input" style="width: 100%;" placeholder="e.g. Core Competencies">
+        </div>
+        <div>
+          <label class="filter-label" for="faqFormAnswer">Canonical Ground Truth Answer:</label>
+          <textarea id="faqFormAnswer" class="search-input" style="width: 100%; height: 110px; resize: vertical; line-height: 1.4; padding: 10px;" placeholder="Exact ground truth answer text served to visitors in 0ms..."></textarea>
+        </div>
+        <div>
+          <label class="filter-label" for="faqFormVariants">Question Matcher Variants (1 per line):</label>
+          <textarea id="faqFormVariants" class="search-input" style="width: 100%; height: 90px; resize: vertical; line-height: 1.4; padding: 10px; font-family: monospace; font-size: 12px;" placeholder="does moses know rls&#10;how does moses handle rls in power bi"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="faqModalCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="faqModalSaveBtn">Save Canonical FAQ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FAQ DELETE CONFIRMATION MODAL -->
+  <div class="modal-backdrop" id="faqDeleteModal" style="display: none;">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <div class="modal-badge" style="background: var(--text-red);">PERMANENT DELETION</div>
+        <h3 class="modal-title">Delete Canonical FAQ</h3>
+        <button class="modal-close" id="faqDeleteModalCloseBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="dry-run-preview" id="faqDeleteModalPreview">
+          <!-- Dynamic delete text -->
+        </div>
+        <div class="dry-run-alert" style="border-left-color: var(--text-red); color: #ff9999;">
+          ⚠️ <b>Warning:</b> This will permanently remove this FAQ and all its question variants from the Layer 2 cache. A backup will be generated automatically.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" id="faqDeleteModalCancelBtn">Cancel</button>
+        <button class="btn btn-danger" id="faqDeleteModalConfirmBtn">Delete FAQ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="admin.js?v=2.4"></script>
+</body>
+
+</html>

@@ -400,6 +400,234 @@ app.post('/api/test', async (req, res) => {
   return app._router.handle(req, res);
 });
 
+/* ════════════════════════════════════════════
+   MIRA KNOWLEDGE GOVERNANCE ADMIN API (PHASE 16)
+   ════════════════════════════════════════════ */
+const {
+  getGovernanceStats,
+  getFaqs,
+  getCandidatesList,
+  getCandidateById,
+  getPromotionLog,
+  promoteCandidateAction,
+  rejectCandidateAction,
+  keepCandidateAction,
+  createFaqAction,
+  updateFaqAction,
+  deleteFaqAction,
+  deleteFaqVariantAction
+} = require('./scripts/review-candidates');
+
+function reloadFaqEntries() {
+  try {
+    delete require.cache[require.resolve('./data/faq-cache.json')];
+    faqEntries = require('./data/faq-cache.json');
+  } catch (e) {
+    try {
+      const data = fs.readFileSync(path.join(__dirname, 'data', 'faq-cache.json'), 'utf8');
+      faqEntries = JSON.parse(data);
+    } catch (err) {
+      console.warn('[Cache] Could not reload faq-cache.json:', err.message);
+    }
+  }
+  return faqEntries;
+}
+
+// Serve Admin GUI static assets
+app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
+
+// 1. GET /api/admin/stats
+app.get('/api/admin/stats', (req, res) => {
+  try {
+    const stats = getGovernanceStats();
+    return res.status(200).json({ success: true, ...stats });
+  } catch (err) {
+    console.error('[Admin API Error] GET /api/admin/stats:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 2. GET /api/admin/candidates
+app.get('/api/admin/candidates', (req, res) => {
+  try {
+    const { page, limit, classification, status, search } = req.query;
+    const result = getCandidatesList({ page, limit, classification, status, search });
+    return res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Admin API Error] GET /api/admin/candidates:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 3. GET /api/admin/candidates/:id
+app.get('/api/admin/candidates/:id', (req, res) => {
+  try {
+    const candidateId = req.params.id;
+    const candidate = getCandidateById(candidateId);
+    if (!candidate) {
+      return res.status(404).json({ success: false, error: `Candidate "${candidateId}" not found.` });
+    }
+    return res.status(200).json({ success: true, candidate });
+  } catch (err) {
+    console.error(`[Admin API Error] GET /api/admin/candidates/${req.params.id}:`, err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 4. GET /api/admin/faqs
+app.get('/api/admin/faqs', (req, res) => {
+  try {
+    const faqs = getFaqs();
+    return res.status(200).json({ success: true, faqs });
+  } catch (err) {
+    console.error('[Admin API Error] GET /api/admin/faqs:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 4b. POST /api/admin/faqs (Create New Canonical FAQ)
+app.post('/api/admin/faqs', (req, res) => {
+  try {
+    const { id, category, answer, questions, anchor } = req.body || {};
+    if (!id || !answer) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both "id" and "answer" are required in JSON body.'
+      });
+    }
+
+    const result = createFaqAction({ id, category, answer, questions, anchor });
+    reloadFaqEntries();
+    return res.status(201).json(result);
+  } catch (err) {
+    console.error('[Admin API Error] POST /api/admin/faqs:', err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 4c. PUT /api/admin/faqs/:id (Update Existing Canonical FAQ)
+app.put('/api/admin/faqs/:id', (req, res) => {
+  try {
+    const faqId = req.params.id;
+    const { category, answer, anchor, questions } = req.body || {};
+    
+    const result = updateFaqAction(faqId, { category, answer, anchor, questions });
+    reloadFaqEntries();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(`[Admin API Error] PUT /api/admin/faqs/${req.params.id}:`, err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 4d. DELETE /api/admin/faqs/:id (Delete Entire Canonical FAQ)
+app.delete('/api/admin/faqs/:id', (req, res) => {
+  try {
+    const faqId = req.params.id;
+    const result = deleteFaqAction(faqId);
+    reloadFaqEntries();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(`[Admin API Error] DELETE /api/admin/faqs/${req.params.id}:`, err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 4e. DELETE /api/admin/faqs/:id/variants (Delete Specific Question Variant)
+app.delete('/api/admin/faqs/:id/variants', (req, res) => {
+  try {
+    const faqId = req.params.id;
+    const variantText = (req.body && req.body.variantText) || req.query.variantText || req.query.variant;
+    if (!variantText) {
+      return res.status(400).json({
+        success: false,
+        error: '"variantText" is required in JSON body or query parameter (?variantText=...).'
+      });
+    }
+
+    const result = deleteFaqVariantAction(faqId, variantText);
+    reloadFaqEntries();
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error(`[Admin API Error] DELETE /api/admin/faqs/${req.params.id}/variants:`, err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 5. GET /api/admin/log
+app.get('/api/admin/log', (req, res) => {
+  try {
+    const { page, limit, decision } = req.query;
+    const result = getPromotionLog({ page, limit, decision });
+    return res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    console.error('[Admin API Error] GET /api/admin/log:', err.message);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// 6. POST /api/admin/promote
+app.post('/api/admin/promote', (req, res) => {
+  try {
+    const { candidateId, destinationFaqId } = req.body || {};
+    if (!candidateId || !destinationFaqId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Both "candidateId" and "destinationFaqId" are required in JSON body.'
+      });
+    }
+
+    const result = promoteCandidateAction(candidateId, destinationFaqId);
+    reloadFaqEntries();
+
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Admin API Error] POST /api/admin/promote:', err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 7. POST /api/admin/reject
+app.post('/api/admin/reject', (req, res) => {
+  try {
+    const { candidateId } = req.body || {};
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        error: '"candidateId" is required in JSON body.'
+      });
+    }
+
+    const result = rejectCandidateAction(candidateId);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Admin API Error] POST /api/admin/reject:', err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// 8. POST /api/admin/keep
+app.post('/api/admin/keep', (req, res) => {
+  try {
+    const { candidateId } = req.body || {};
+    if (!candidateId) {
+      return res.status(400).json({
+        success: false,
+        error: '"candidateId" is required in JSON body.'
+      });
+    }
+
+    const result = keepCandidateAction(candidateId);
+    return res.status(200).json(result);
+  } catch (err) {
+    console.error('[Admin API Error] POST /api/admin/keep:', err.message);
+    return res.status(400).json({ success: false, error: err.message });
+  }
+});
+
 // Start Express server
 app.listen(PORT, () => {
   console.log(`\n==================================================`);
@@ -407,5 +635,6 @@ app.listen(PORT, () => {
   console.log(` Running on: http://localhost:${PORT}`);
   console.log(` Health Check: http://localhost:${PORT}/api/health`);
   console.log(` Chat Endpoint: POST http://localhost:${PORT}/api/chat`);
+  console.log(` Admin Console: http://localhost:${PORT}/admin/`);
   console.log(`==================================================\n`);
 });
