@@ -2,6 +2,10 @@
  * Automated Verification for Phase 16 Canonical FAQ CRUD API
  */
 const http = require('http');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
+
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || '';
 
 function makeRequest(options, postData = null) {
   return new Promise((resolve, reject) => {
@@ -10,9 +14,15 @@ function makeRequest(options, postData = null) {
     if (postData) {
       bodyBuffer = Buffer.from(typeof postData === 'string' ? postData : JSON.stringify(postData));
       opts.headers = {
+        'x-admin-key': ADMIN_API_KEY,
         ...(opts.headers || {}),
         'Content-Type': 'application/json',
         'Content-Length': bodyBuffer.length
+      };
+    } else {
+      opts.headers = {
+        'x-admin-key': ADMIN_API_KEY,
+        ...(opts.headers || {})
       };
     }
 

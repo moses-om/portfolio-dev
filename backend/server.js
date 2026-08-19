@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const crypto = require('crypto');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -39,17 +40,71 @@ const allowedOrigins = [
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+    if (allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
       return callback(null, true);
     }
-    return callback(null, true);
+    return callback(new Error('CORS origin not allowed'), false);
   },
   credentials: true
 }));
 
 app.use(express.json());
+
+/**
+ * Helper for timing-safe key verification
+ */
+function verifyTimingSafeKey(suppliedKey, expectedKey) {
+  if (!suppliedKey || typeof suppliedKey !== 'string' || !expectedKey) return false;
+  const expectedBuffer = Buffer.from(expectedKey, 'utf8');
+  const suppliedBuffer = Buffer.from(suppliedKey.trim(), 'utf8');
+  if (expectedBuffer.length !== suppliedBuffer.length) return false;
+  return crypto.timingSafeEqual(expectedBuffer, suppliedBuffer);
+}
+
+/**
+ * Helper to extract key from HTTP Basic Authentication header
+ */
+function extractBasicAuthKey(authHeader) {
+  if (!authHeader || !authHeader.startsWith('Basic ')) return null;
+  try {
+    const credentials = Buffer.from(authHeader.split(' ')[1], 'base64').toString('utf8');
+    const parts = credentials.split(':');
+    const password = parts.length > 1 ? parts.slice(1).join(':') : parts[0];
+    const username = parts.length > 1 ? parts[0] : '';
+    return password || username;
+  } catch (e) {
+    return null;
+  }
+}
+
+/**
+ * Admin GUI Authentication Middleware for /admin/ (HTTP Basic Auth challenge)
+ */
+function authenticateAdminGui(req, res, next) {
+  const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
+
+  if (!adminApiKey) {
+    return res.status(503).send('503 Service Unavailable: Admin authentication is not configured on the server.');
+  }
+
+  const headerKey = req.headers['x-admin-key'];
+  const basicKey = extractBasicAuthKey(req.headers['authorization']);
+  const candidateKey = headerKey || basicKey;
+
+  if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
+    res.setHeader('WWW-Authenticate', 'Basic realm="MIRA Knowledge Governance Console", charset="UTF-8"');
+    return res.status(401).send('401 Unauthorized: Valid MIRA Admin credentials required.');
+  }
+
+  return next();
+}
+
+// Protect Admin GUI static assets and root route with authentication challenge BEFORE static serving
+app.use('/admin', authenticateAdminGui);
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, '..')));
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
+});
 
 // Handle malformed JSON request bodies gracefully
 app.use((err, req, res, next) => {
@@ -383,9 +438,12 @@ app.post('/api/chat', async (req, res) => {
 
   } catch (err) {
     console.error('Error handling /api/chat request:', err.message);
+    const isProduction = process.env.NODE_ENV === 'production';
     return res.status(500).json({
       success: false,
-      error: `Gemini API Error: ${err.message || 'An error occurred while communicating with Gemini API.'}`
+      error: isProduction
+        ? 'Internal Server Error. Unable to process message.'
+        : `Gemini API Error: ${err.message || 'An error occurred while communicating with Gemini API.'}`
     });
   }
 });
@@ -433,11 +491,39 @@ function reloadFaqEntries() {
   return faqEntries;
 }
 
-// Serve Admin GUI static assets
-app.use('/admin', express.static(path.join(__dirname, 'public', 'admin')));
-app.get('/admin', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
-});
+/**
+ * Centralized Timing-Safe Admin Authentication Middleware for /api/admin/*
+ */
+function authenticateAdmin(req, res, next) {
+  const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
+
+  if (!adminApiKey) {
+    return res.status(503).json({
+      success: false,
+      error: 'Admin authentication is not configured.'
+    });
+  }
+
+  const headerKey = req.headers['x-admin-key'];
+  const basicKey = extractBasicAuthKey(req.headers['authorization']);
+  const bearerKey = req.headers['authorization'] && req.headers['authorization'].startsWith('Bearer ')
+    ? req.headers['authorization'].substring(7).trim()
+    : null;
+
+  const candidateKey = headerKey || basicKey || bearerKey;
+
+  if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
+    return res.status(401).json({
+      success: false,
+      error: 'Unauthorized.'
+    });
+  }
+
+  return next();
+}
+
+// Protect all /api/admin/* endpoints with centralized authentication middleware
+app.use('/api/admin', authenticateAdmin);
 
 // 1. GET /api/admin/stats
 app.get('/api/admin/stats', (req, res) => {

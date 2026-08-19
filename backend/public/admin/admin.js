@@ -37,23 +37,55 @@ const state = {
   pendingAction: null
 };
 
+// Authentication helper for Governance API
+function getAdminKey() {
+  let key = sessionStorage.getItem('mira_admin_key');
+  if (!key) {
+    key = prompt('Enter MIRA Knowledge Governance Passkey:');
+    if (key) {
+      sessionStorage.setItem('mira_admin_key', key.trim());
+    }
+  }
+  return key ? key.trim() : '';
+}
+
+async function authFetch(url, options = {}) {
+  const key = getAdminKey();
+  const headers = {
+    ...(options.headers || {}),
+    'x-admin-key': key
+  };
+
+  const res = await fetch(url, { ...options, headers });
+  if (res.status === 401) {
+    sessionStorage.removeItem('mira_admin_key');
+    alert('Unauthorized: Invalid or missing Admin Passkey. Please authenticate.');
+    throw new Error('HTTP 401: Unauthorized');
+  }
+  if (res.status === 503) {
+    alert('Service Unavailable: Admin authentication is not configured on the backend.');
+    throw new Error('HTTP 503: Admin authentication not configured.');
+  }
+  return res;
+}
+
 // API Client
 const api = {
   async getStats() {
-    const res = await fetch('/api/admin/stats');
+    const res = await authFetch('/api/admin/stats');
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch stats`);
     return await res.json();
   },
 
   async getFaqs() {
-    const res = await fetch('/api/admin/faqs');
+    const res = await authFetch('/api/admin/faqs');
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch FAQs`);
     const data = await res.json();
     return data.faqs || [];
   },
 
   async createFaq(faqData) {
-    const res = await fetch('/api/admin/faqs', {
+    const res = await authFetch('/api/admin/faqs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(faqData)
@@ -66,7 +98,7 @@ const api = {
   },
 
   async updateFaq(faqId, updateData) {
-    const res = await fetch(`/api/admin/faqs/${encodeURIComponent(faqId)}`, {
+    const res = await authFetch(`/api/admin/faqs/${encodeURIComponent(faqId)}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updateData)
@@ -79,7 +111,7 @@ const api = {
   },
 
   async deleteFaq(faqId) {
-    const res = await fetch(`/api/admin/faqs/${encodeURIComponent(faqId)}`, {
+    const res = await authFetch(`/api/admin/faqs/${encodeURIComponent(faqId)}`, {
       method: 'DELETE'
     });
     const data = await res.json();
@@ -90,7 +122,7 @@ const api = {
   },
 
   async deleteFaqVariant(faqId, variantText) {
-    const res = await fetch(`/api/admin/faqs/${encodeURIComponent(faqId)}/variants?variantText=${encodeURIComponent(variantText)}`, {
+    const res = await authFetch(`/api/admin/faqs/${encodeURIComponent(faqId)}/variants?variantText=${encodeURIComponent(variantText)}`, {
       method: 'DELETE'
     });
     const data = await res.json();
@@ -102,13 +134,13 @@ const api = {
 
   async getCandidates(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`/api/admin/candidates?${query}`);
+    const res = await authFetch(`/api/admin/candidates?${query}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch candidates`);
     return await res.json();
   },
 
   async getCandidateById(id) {
-    const res = await fetch(`/api/admin/candidates/${encodeURIComponent(id)}`);
+    const res = await authFetch(`/api/admin/candidates/${encodeURIComponent(id)}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch candidate ${id}`);
     const data = await res.json();
     return data.candidate;
@@ -116,13 +148,13 @@ const api = {
 
   async getLogs(params = {}) {
     const query = new URLSearchParams(params).toString();
-    const res = await fetch(`/api/admin/log?${query}`);
+    const res = await authFetch(`/api/admin/log?${query}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch audit logs`);
     return await res.json();
   },
 
   async promote(candidateId, destinationFaqId) {
-    const res = await fetch('/api/admin/promote', {
+    const res = await authFetch('/api/admin/promote', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidateId, destinationFaqId })
@@ -135,7 +167,7 @@ const api = {
   },
 
   async reject(candidateId) {
-    const res = await fetch('/api/admin/reject', {
+    const res = await authFetch('/api/admin/reject', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidateId })
@@ -148,7 +180,7 @@ const api = {
   },
 
   async keep(candidateId) {
-    const res = await fetch('/api/admin/keep', {
+    const res = await authFetch('/api/admin/keep', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ candidateId })

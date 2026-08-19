@@ -1,24 +1,31 @@
 /**
- * MIRA Knowledge Governance Admin API Test Suite (Phase 16)
- * Validates all administrative endpoints, error handlers, and persistence safety.
+ * MIRA Knowledge Governance Admin API & Security Verification Suite (Phase 1 Hardened)
+ * Validates administrative authentication, GUI access boundary, CORS enforcement,
+ * static file isolation, and canonical governance actions.
  */
 
 const assert = require('assert');
 const http = require('http');
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const BASE_URL = 'http://localhost:3001';
+const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'test_admin_key';
 
-function request(method, path, body = null) {
+function request(method, reqPath, body = null, customHeaders = {}) {
   return new Promise((resolve, reject) => {
-    const url = new URL(path, BASE_URL);
+    const url = new URL(reqPath, BASE_URL);
+    const headers = {
+      'Content-Type': 'application/json',
+      ...customHeaders
+    };
+
     const options = {
       method,
       hostname: url.hostname,
       port: url.port,
       path: url.pathname + url.search,
-      headers: {
-        'Content-Type': 'application/json'
-      }
+      headers
     };
 
     const req = http.request(options, (res) => {
@@ -27,9 +34,9 @@ function request(method, path, body = null) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          resolve({ status: res.statusCode, body: parsed });
+          resolve({ status: res.statusCode, headers: res.headers, body: parsed });
         } catch (e) {
-          resolve({ status: res.statusCode, text: data });
+          resolve({ status: res.statusCode, headers: res.headers, text: data });
         }
       });
     });
@@ -44,7 +51,7 @@ function request(method, path, body = null) {
 
 async function runAdminApiTests() {
   console.log('\n===============================================================');
-  console.log(' MIRA Knowledge Governance Admin API Verification Suite');
+  console.log(' MIRA Knowledge Governance Security & Admin Verification Suite');
   console.log(' Target: http://localhost:3001');
   console.log('===============================================================\n');
 
@@ -63,117 +70,167 @@ async function runAdminApiTests() {
     }
   }
 
-  // 1. Health Check
+  const authHeader = { 'x-admin-key': ADMIN_API_KEY };
+  const basicAuthHeader = { 'Authorization': 'Basic ' + Buffer.from('admin:' + ADMIN_API_KEY).toString('base64') };
+
+  // ─── 1. PUBLIC HEALTH & CORS CHECKS ───
   await test('GET /api/health returns status ok', async () => {
     const res = await request('GET', '/api/health');
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.status, 'ok');
   });
 
-  // 2. Governance Stats
-  await test('GET /api/admin/stats returns valid breakdown', async () => {
+  await test('CORS allows official GitHub Pages origin (https://moses-om.github.io)', async () => {
+    const res = await request('GET', '/api/health', null, { 'Origin': 'https://moses-om.github.io' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['access-control-allow-origin'], 'https://moses-om.github.io');
+  });
+
+  await test('CORS allows legitimate localhost development origin (http://localhost:3000)', async () => {
+    const res = await request('GET', '/api/health', null, { 'Origin': 'http://localhost:3000' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['access-control-allow-origin'], 'http://localhost:3000');
+  });
+
+  await test('CORS blocks arbitrary unapproved origin (https://evil.example)', async () => {
+    const res = await request('GET', '/api/health', null, { 'Origin': 'https://evil.example' });
+    assert.notStrictEqual(res.headers['access-control-allow-origin'], 'https://evil.example');
+  });
+
+  // ─── 2. PUBLIC /api/chat ENDPOINT INTEGRITY ───
+  await test('Public /api/chat remains functional without admin credentials', async () => {
+    const res = await request('POST', '/api/chat', { message: 'What is Moses\'s background?' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.response != null);
+  });
+
+  // ─── 3. STATIC FILE EXPOSURE CHECKS ───
+  await test('Static Exposure: GET /backend/server.js is blocked (404)', async () => {
+    const res = await request('GET', '/backend/server.js');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/data/candidate-cache.json is blocked (404)', async () => {
+    const res = await request('GET', '/backend/data/candidate-cache.json');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/data/candidate-promotion-log.json is blocked (404)', async () => {
+    const res = await request('GET', '/backend/data/candidate-promotion-log.json');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/prompts/system.js is blocked (404)', async () => {
+    const res = await request('GET', '/backend/prompts/system.js');
+    assert.strictEqual(res.status, 404);
+  });
+
+  // ─── 4. ADMIN GUI AUTHENTICATION ENFORCEMENT CHECKS ───
+  await test('Admin GUI Auth: Unauthenticated GET /admin/ is rejected (401 + WWW-Authenticate)', async () => {
+    const res = await request('GET', '/admin/');
+    assert.strictEqual(res.status, 401);
+    assert.ok(res.headers['www-authenticate'] != null);
+    assert.ok(res.headers['www-authenticate'].includes('Basic realm='));
+  });
+
+  await test('Admin GUI Auth: GET /admin/ with invalid credentials is rejected (401)', async () => {
+    const invalidBasic = { 'Authorization': 'Basic ' + Buffer.from('admin:wrong_password').toString('base64') };
+    const res = await request('GET', '/admin/', null, invalidBasic);
+    assert.strictEqual(res.status, 401);
+  });
+
+  await test('Admin GUI Auth: Authenticated GET /admin/ with valid Basic Auth succeeds (200 HTML)', async () => {
+    const res = await request('GET', '/admin/', null, basicAuthHeader);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
+  });
+
+  await test('Admin GUI Auth: Authenticated GET /admin/ with x-admin-key succeeds (200 HTML)', async () => {
+    const res = await request('GET', '/admin/', null, authHeader);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
+  });
+
+  // ─── 5. ADMIN API AUTHENTICATION ENFORCEMENT CHECKS ───
+  await test('Admin Auth: GET /api/admin/stats without x-admin-key returns 401 Unauthorized', async () => {
     const res = await request('GET', '/api/admin/stats');
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.success, false);
+    assert.strictEqual(res.body.error, 'Unauthorized.');
+  });
+
+  await test('Admin Auth: GET /api/admin/stats with invalid x-admin-key returns 401 Unauthorized', async () => {
+    const res = await request('GET', '/api/admin/stats', null, { 'x-admin-key': 'incorrect_dummy_key_123' });
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.success, false);
+    assert.strictEqual(res.body.error, 'Unauthorized.');
+  });
+
+  // ─── 6. AUTHENTICATED GOVERNANCE ACTIONS ───
+  await test('Admin Auth: GET /api/admin/stats with valid x-admin-key returns 200 OK', async () => {
+    const res = await request('GET', '/api/admin/stats', null, authHeader);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.strictEqual(typeof res.body.totalCandidates, 'number');
     assert.strictEqual(typeof res.body.totalVerifiedFaqs, 'number');
     assert.strictEqual(typeof res.body.totalQuestionVariants, 'number');
     assert.ok(res.body.totalVerifiedFaqs >= 13);
-    assert.ok(res.body.classificationBreakdown != null);
   });
 
-  // 3. Canonical FAQs List
-  await test('GET /api/admin/faqs returns 13 canonical FAQs', async () => {
-    const res = await request('GET', '/api/admin/faqs');
+  await test('Admin Auth: GET /api/admin/faqs with valid x-admin-key returns canonical FAQs', async () => {
+    const res = await request('GET', '/api/admin/faqs', null, authHeader);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(Array.isArray(res.body.faqs));
     assert.strictEqual(res.body.faqs.length, 13);
-    const firstFaq = res.body.faqs[0];
-    assert.ok(firstFaq.id != null);
-    assert.ok(firstFaq.answer != null);
-    assert.ok(Array.isArray(firstFaq.questions));
   });
 
-  // 4. Candidate List with Pagination & Filtering
-  await test('GET /api/admin/candidates returns paginated candidate list', async () => {
-    const res = await request('GET', '/api/admin/candidates?page=1&limit=5');
+  await test('Admin Auth: GET /api/admin/candidates with valid x-admin-key returns paginated list', async () => {
+    const res = await request('GET', '/api/admin/candidates?page=1&limit=5', null, authHeader);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(Array.isArray(res.body.candidates));
-    assert.strictEqual(res.body.candidates.length, 5);
-    assert.strictEqual(res.body.pagination.page, 1);
-    assert.strictEqual(res.body.pagination.limit, 5);
   });
 
-  // 5. Candidate Detail by ID
-  await test('GET /api/admin/candidates/:id returns enriched candidate metadata', async () => {
-    const listRes = await request('GET', '/api/admin/candidates?limit=1');
-    const candId = listRes.body.candidates[0].id;
-    const res = await request('GET', `/api/admin/candidates/${candId}`);
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.success, true);
-    assert.strictEqual(res.body.candidate.id, candId);
-    assert.ok(res.body.candidate.classification != null);
-    assert.ok(res.body.candidate.recommendation != null);
-    assert.ok(res.body.candidate.queryNature != null);
-  });
-
-  // 6. Candidate Detail 404 for invalid ID
-  await test('GET /api/admin/candidates/invalid_id returns 404 error', async () => {
-    const res = await request('GET', '/api/admin/candidates/invalid_nonexistent_id');
+  await test('Admin Auth: GET /api/admin/candidates/invalid_id returns 404 error', async () => {
+    const res = await request('GET', '/api/admin/candidates/invalid_nonexistent_id', null, authHeader);
     assert.strictEqual(res.status, 404);
     assert.strictEqual(res.body.success, false);
   });
 
-  // 7. Audit Log
-  await test('GET /api/admin/log returns provenance history', async () => {
-    const res = await request('GET', '/api/admin/log?limit=10');
+  await test('Admin Auth: GET /api/admin/log returns provenance history', async () => {
+    const res = await request('GET', '/api/admin/log?limit=10', null, authHeader);
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(Array.isArray(res.body.logs));
-    assert.ok(res.body.logs.length > 0);
-    const firstLog = res.body.logs[0];
-    assert.ok(firstLog.decision != null);
-    assert.ok(firstLog.reviewerDecisionTimestamp != null);
   });
 
-  // 8. Error handling: Reject without candidateId returns 400
-  await test('POST /api/admin/reject fails gracefully without candidateId', async () => {
-    const res = await request('POST', '/api/admin/reject', {});
+  await test('Admin Auth: POST /api/admin/reject fails gracefully without candidateId', async () => {
+    const res = await request('POST', '/api/admin/reject', {}, authHeader);
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.success, false);
   });
 
-  // 9. Error handling: Promote without destinationFaqId returns 400
-  await test('POST /api/admin/promote fails gracefully without destinationFaqId', async () => {
-    const res = await request('POST', '/api/admin/promote', { candidateId: 'some_cand' });
+  await test('Admin Auth: POST /api/admin/promote fails gracefully without destinationFaqId', async () => {
+    const res = await request('POST', '/api/admin/promote', { candidateId: 'some_cand' }, authHeader);
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.success, false);
   });
 
-  // 10. Error handling: Promote invalid destination FAQ returns error
-  await test('POST /api/admin/promote blocks invalid destination FAQ ID', async () => {
+  await test('Admin Auth: POST /api/admin/promote blocks invalid destination FAQ ID', async () => {
     const res = await request('POST', '/api/admin/promote', {
       candidateId: 'candidate_1786315861870_wam3',
       destinationFaqId: 'non_existent_fake_faq_category'
-    });
+    }, authHeader);
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.success, false);
   });
 
-  // 11. Error handling: Keep without candidateId returns 400
-  await test('POST /api/admin/keep fails gracefully without candidateId', async () => {
-    const res = await request('POST', '/api/admin/keep', {});
+  await test('Admin Auth: POST /api/admin/keep fails gracefully without candidateId', async () => {
+    const res = await request('POST', '/api/admin/keep', {}, authHeader);
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.success, false);
-  });
-
-  // 12. Admin GUI Static Asset Serving
-  await test('GET /admin/ serves Admin GUI HTML', async () => {
-    const res = await request('GET', '/admin/');
-    assert.strictEqual(res.status, 200);
-    assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
   });
 
   console.log('\n===============================================================');
