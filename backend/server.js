@@ -180,6 +180,98 @@ function clearAdminAuthFailures(clientIp) {
 }
 
 /**
+ * Native Cookie Parser Helper (Zero Dependencies)
+ */
+function parseCookies(req) {
+  const list = {};
+  const cookieHeader = req.headers && req.headers.cookie;
+  if (!cookieHeader) return list;
+  cookieHeader.split(';').forEach(cookie => {
+    let [name, ...rest] = cookie.split('=');
+    name = name ? name.trim() : '';
+    if (!name) return;
+    const value = rest.join('=').trim();
+    try {
+      list[name] = decodeURIComponent(value);
+    } catch (e) {
+      list[name] = value;
+    }
+  });
+  return list;
+}
+
+/**
+ * In-Memory Session Store for Admin Governance Console (Zero Dependencies)
+ */
+const sessions = new Map(); // sessionId -> { username, createdAt, expiresAt }
+const SESSION_TTL_MS = 28800000; // 8 hours (28,800,000 ms)
+const MAX_SESSIONS = 1000;
+
+const sessionCleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [sessionId, session] of sessions.entries()) {
+    if (now >= session.expiresAt) {
+      sessions.delete(sessionId);
+    }
+  }
+}, 300000); // 5 minutes
+sessionCleanupTimer.unref();
+
+function createSession(username) {
+  const sessionId = crypto.randomBytes(32).toString('hex');
+  const now = Date.now();
+  if (sessions.size >= MAX_SESSIONS) {
+    const oldestKey = sessions.keys().next().value;
+    if (oldestKey) sessions.delete(oldestKey);
+  }
+  sessions.set(sessionId, {
+    username,
+    createdAt: now,
+    expiresAt: now + SESSION_TTL_MS
+  });
+  return sessionId;
+}
+
+function getValidSession(sessionId) {
+  if (!sessionId || typeof sessionId !== 'string') return null;
+  const session = sessions.get(sessionId);
+  if (!session) return null;
+  if (Date.now() >= session.expiresAt) {
+    sessions.delete(sessionId);
+    return null;
+  }
+  return session;
+}
+
+function destroySession(sessionId) {
+  if (sessionId && sessions.has(sessionId)) {
+    sessions.delete(sessionId);
+  }
+}
+
+/**
+ * Native Scrypt Password Verification Helper (Zero Dependencies)
+ */
+function verifyPasswordScrypt(suppliedPassword, storedHash) {
+  if (!suppliedPassword || typeof suppliedPassword !== 'string' || !storedHash || typeof storedHash !== 'string') {
+    return false;
+  }
+  const parts = storedHash.split(':');
+  if (parts.length !== 2) return false;
+  const [salt, expectedDerivedHex] = parts;
+  if (!salt || !expectedDerivedHex) return false;
+
+  try {
+    const expectedBuffer = Buffer.from(expectedDerivedHex, 'hex');
+    const derivedBuffer = crypto.scryptSync(suppliedPassword, salt, expectedBuffer.length);
+    if (expectedBuffer.length !== derivedBuffer.length) return false;
+    return crypto.timingSafeEqual(expectedBuffer, derivedBuffer);
+  } catch (err) {
+    return false;
+  }
+}
+
+/**
  * Helper for timing-safe key verification
  */
 function verifyTimingSafeKey(suppliedKey, expectedKey) {
@@ -224,37 +316,8 @@ function applyAdminCsp(req, res, next) {
   next();
 }
 
-/**
- * Admin GUI Authentication Middleware for /admin/ (HTTP Basic Auth challenge + Throttling)
- */
-function authenticateAdminGui(req, res, next) {
-  const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
-  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-
-  if (!adminApiKey) {
-    return res.status(503).send('503 Service Unavailable: Admin authentication is not configured on the server.');
-  }
-
-  if (checkAdminFailedThrottling(clientIp, res)) {
-    return;
-  }
-
-  const headerKey = req.headers['x-admin-key'];
-  const basicKey = extractBasicAuthKey(req.headers['authorization']);
-  const candidateKey = headerKey || basicKey;
-
-  if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
-    recordAdminAuthFailure(clientIp);
-    res.setHeader('WWW-Authenticate', 'Basic realm="MIRA Knowledge Governance Console", charset="UTF-8"');
-    return res.status(401).send('401 Unauthorized: Valid MIRA Admin credentials required.');
-  }
-
-  clearAdminAuthFailures(clientIp);
-  return next();
-}
-
-// Protect Admin GUI static assets and root route with authentication challenge BEFORE static serving
-app.use('/admin', applyAdminHeaders, applyAdminCsp, authenticateAdminGui);
+// Protect Admin GUI static assets and root route with security & cache headers (No Basic Auth prompt)
+app.use('/admin', applyAdminHeaders, applyAdminCsp);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
@@ -653,22 +716,119 @@ function reloadFaqEntries() {
 }
 
 /**
- * Centralized Timing-Safe Admin Authentication Middleware for /api/admin/* (with Throttling)
+ * POST /api/admin/login
+ * Verifies username + scrypt password hash, sets HttpOnly session cookie
  */
-function authenticateAdmin(req, res, next) {
-  const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
+app.post('/api/admin/login', applyAdminHeaders, (req, res) => {
   const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-
-  if (!adminApiKey) {
-    return res.status(503).json({
-      success: false,
-      error: 'Admin authentication is not configured.'
-    });
-  }
 
   if (checkAdminFailedThrottling(clientIp, res)) {
     return;
   }
+
+  const { username, password } = req.body || {};
+
+  if (!username || typeof username !== 'string' || !password || typeof password !== 'string') {
+    recordAdminAuthFailure(clientIp);
+    return res.status(400).json({
+      success: false,
+      error: 'Username and password are required.'
+    });
+  }
+
+  const configuredUsername = process.env.ADMIN_USERNAME ? process.env.ADMIN_USERNAME.trim() : '';
+  const configuredPasswordHash = process.env.ADMIN_PASSWORD_HASH ? process.env.ADMIN_PASSWORD_HASH.trim() : '';
+
+  if (!configuredUsername || !configuredPasswordHash) {
+    return res.status(503).json({
+      success: false,
+      error: 'Admin authentication is not configured on the server.'
+    });
+  }
+
+  const isUsernameValid = verifyTimingSafeKey(username.trim(), configuredUsername);
+  const isPasswordValid = verifyPasswordScrypt(password, configuredPasswordHash);
+
+  if (!isUsernameValid || !isPasswordValid) {
+    recordAdminAuthFailure(clientIp);
+    return res.status(401).json({
+      success: false,
+      error: 'Invalid username or password.'
+    });
+  }
+
+  clearAdminAuthFailures(clientIp);
+  const sessionId = createSession(configuredUsername);
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieFlags = [
+    `mira_session=${sessionId}`,
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    `Max-Age=${SESSION_TTL_MS / 1000}`
+  ];
+  if (isProduction) {
+    cookieFlags.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', cookieFlags.join('; '));
+  return res.status(200).json({
+    success: true,
+    authenticated: true
+  });
+});
+
+/**
+ * POST /api/admin/logout
+ * Destroys server-side session and clears client cookie
+ */
+app.post('/api/admin/logout', applyAdminHeaders, (req, res) => {
+  const cookies = parseCookies(req);
+  const sessionId = cookies.mira_session;
+  if (sessionId) {
+    destroySession(sessionId);
+  }
+
+  const isProduction = process.env.NODE_ENV === 'production';
+  const cookieFlags = [
+    'mira_session=',
+    'Path=/',
+    'HttpOnly',
+    'SameSite=Strict',
+    'Max-Age=0'
+  ];
+  if (isProduction) {
+    cookieFlags.push('Secure');
+  }
+
+  res.setHeader('Set-Cookie', cookieFlags.join('; '));
+  return res.status(200).json({
+    success: true
+  });
+});
+
+/**
+ * Centralized Timing-Safe Admin Authentication Middleware for /api/admin/* (Dual-Path)
+ * Supports PATH A (Browser HttpOnly session cookie) and PATH B (Machine x-admin-key header)
+ */
+function authenticateAdmin(req, res, next) {
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
+  // PATH A — Check Browser Session Cookie
+  const cookies = parseCookies(req);
+  const sessionId = cookies.mira_session;
+  if (sessionId) {
+    const session = getValidSession(sessionId);
+    if (session) {
+      req.adminUser = session.username;
+      clearAdminAuthFailures(clientIp);
+      return next();
+    }
+  }
+
+  // PATH B — Check API / Token Header (x-admin-key, Bearer, Basic)
+  const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
 
   const headerKey = req.headers['x-admin-key'];
   const basicKey = extractBasicAuthKey(req.headers['authorization']);
@@ -678,16 +838,43 @@ function authenticateAdmin(req, res, next) {
 
   const candidateKey = headerKey || basicKey || bearerKey;
 
-  if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
-    recordAdminAuthFailure(clientIp);
-    return res.status(401).json({
+  if (candidateKey) {
+    if (!adminApiKey) {
+      return res.status(503).json({
+        success: false,
+        error: 'Admin authentication is not configured.'
+      });
+    }
+
+    if (checkAdminFailedThrottling(clientIp, res)) {
+      return;
+    }
+
+    if (verifyTimingSafeKey(candidateKey, adminApiKey)) {
+      clearAdminAuthFailures(clientIp);
+      return next();
+    } else {
+      recordAdminAuthFailure(clientIp);
+      return res.status(401).json({
+        success: false,
+        error: 'Unauthorized.'
+      });
+    }
+  }
+
+  // Neither valid session nor valid key supplied
+  const hasLoginConfig = Boolean(process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD_HASH);
+  if (!adminApiKey && !hasLoginConfig) {
+    return res.status(503).json({
       success: false,
-      error: 'Unauthorized.'
+      error: 'Admin authentication is not configured.'
     });
   }
 
-  clearAdminAuthFailures(clientIp);
-  return next();
+  return res.status(401).json({
+    success: false,
+    error: 'Unauthorized.'
+  });
 }
 
 // Protect all /api/admin/* endpoints with administrative headers and centralized authentication

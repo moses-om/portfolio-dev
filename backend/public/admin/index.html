@@ -17,8 +17,50 @@
   <div class="glow-orb glow-orb-1"></div>
   <div class="glow-orb glow-orb-2"></div>
 
+  <!-- Login Portal Overlay -->
+  <div id="loginOverlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-brand">
+        <div class="brand-badge">MIRA INTELLIGENCE</div>
+        <h2 class="login-title">Governance Console</h2>
+        <p class="login-subtitle">Authorized access only</p>
+      </div>
+
+      <div id="loginErrorMessage" class="login-error-banner" style="display: none;"></div>
+
+      <form id="loginForm" class="login-form" autocomplete="on">
+        <div class="form-group">
+          <label for="loginUsername" class="form-label">Username</label>
+          <input type="text" id="loginUsername" name="username" class="form-input" placeholder="Enter admin username" required autofocus autocomplete="username">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPassword" class="form-label">Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="loginPassword" name="password" class="form-input" placeholder="Enter admin password" required autocomplete="current-password">
+            <button type="button" id="togglePasswordBtn" class="password-toggle-btn" aria-label="Toggle password visibility" title="Show/Hide Password">
+              <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="loginSubmitBtn" class="btn btn-primary btn-block">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-spinner" style="display: none;"></span>
+        </button>
+      </form>
+
+      <div class="login-footer">
+        <span>Protected by DPOE Security Layer & Scrypt Authentication</span>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Container -->
-  <div class="app-container">
+  <div class="app-container" id="appContainer" style="display: none;">
     <!-- Top Header -->
     <header class="app-header">
       <div class="header-brand">
@@ -42,6 +84,14 @@
         <a href="/" target="_blank" class="btn btn-ghost btn-sm" title="View my digital portfolio">
           My Digital Portfolio ↗
         </a>
+        <button class="btn btn-secondary btn-sm" id="logoutBtn" title="End administrative session">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Log Out
+        </button>
       </div>
     </header>
 

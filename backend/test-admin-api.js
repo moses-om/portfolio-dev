@@ -1,6 +1,7 @@
 /**
- * MIRA Knowledge Governance Admin API & Production Security Verification Suite (Phase 2A Hardened)
- * Validates administrative authentication, rate limiting, payload/prompt bounding,
+ * MIRA Knowledge Governance Admin API & Production Security Verification Suite (Phase 3B Hardened)
+ * Validates Login Portal (username/scrypt-password), HttpOnly session cookies, logout,
+ * backward-compatible x-admin-key authentication, rate limiting, payload/prompt bounding,
  * security headers, cache-control, CORS, static file isolation, and canonical governance actions.
  */
 
@@ -11,6 +12,8 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const BASE_URL = 'http://localhost:3001';
 const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'test_admin_key';
+const TEST_ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'mira_admin';
+const TEST_ADMIN_PASSWORD = 'test_password_2026';
 
 function request(method, reqPath, body = null, customHeaders = {}) {
   return new Promise((resolve, reject) => {
@@ -58,9 +61,16 @@ function request(method, reqPath, body = null, customHeaders = {}) {
   });
 }
 
+function extractCookieValue(setCookieHeader, cookieName) {
+  if (!setCookieHeader) return null;
+  const cookieStr = Array.isArray(setCookieHeader) ? setCookieHeader.join('; ') : setCookieHeader;
+  const match = cookieStr.match(new RegExp(`${cookieName}=([^;]+)`));
+  return match ? match[1] : null;
+}
+
 async function runAdminApiTests() {
   console.log('\n===============================================================');
-  console.log(' MIRA Knowledge Governance Security & Hardening Verification Suite (Phase 2A)');
+  console.log(' MIRA Knowledge Governance Security & Hardening Verification Suite (Phase 3B)');
   console.log(' Target: http://localhost:3001');
   console.log('===============================================================\n');
 
@@ -80,7 +90,7 @@ async function runAdminApiTests() {
   }
 
   const authHeader = { 'x-admin-key': ADMIN_API_KEY };
-  const basicAuthHeader = { 'Authorization': 'Basic ' + Buffer.from('admin:' + ADMIN_API_KEY).toString('base64') };
+  let validSessionCookie = null;
 
   // ─── 1. PUBLIC HEALTH & CORS CHECKS ───
   await test('GET /api/health returns status ok', async () => {
@@ -139,114 +149,113 @@ async function runAdminApiTests() {
   });
 
   await test('Security Headers: /admin GUI emits targeted CSP', async () => {
-    const res = await request('GET', '/admin/', null, authHeader);
+    const res = await request('GET', '/admin/');
     assert.strictEqual(res.status, 200);
     assert.ok(res.headers['content-security-policy'] != null);
     assert.ok(res.headers['content-security-policy'].includes("default-src 'self'"));
     assert.ok(res.headers['content-security-policy'].includes("https://fonts.googleapis.com"));
   });
 
-  // ─── 3. PAYLOAD & PROMPT BOUNDS (SEC-05) ───
-  await test('Payload Limits: Normal message (100 chars) succeeds (200 OK)', async () => {
-    const res = await request('POST', '/api/chat', { message: 'What is Moses\'s background?' });
+  // ─── 3. ADMIN GUI ROUTING & BASIC AUTH POPUP REMOVAL (PHASE 3B) ───
+  await test('Admin GUI: GET /admin/ no longer triggers WWW-Authenticate Basic challenge', async () => {
+    const res = await request('GET', '/admin/');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['www-authenticate'], undefined);
+    assert.ok(res.text.includes('MIRA INTELLIGENCE'));
+    assert.ok(res.text.includes('Governance Console'));
+    assert.ok(res.text.includes('loginOverlay'));
+  });
+
+  // ─── 4. LOGIN ENDPOINT (POST /api/admin/login) & SCRYPT VERIFICATION ───
+  await test('Admin Login: POST /api/admin/login with missing username returns 400 Bad Request', async () => {
+    const res = await request('POST', '/api/admin/login', { password: TEST_ADMIN_PASSWORD });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('Username and password are required'));
+  });
+
+  await test('Admin Login: POST /api/admin/login with missing password returns 400 Bad Request', async () => {
+    const res = await request('POST', '/api/admin/login', { username: TEST_ADMIN_USERNAME });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('Username and password are required'));
+  });
+
+  await test('Admin Login: POST /api/admin/login with invalid credentials returns 401 Unauthorized', async () => {
+    const res = await request('POST', '/api/admin/login', {
+      username: TEST_ADMIN_USERNAME,
+      password: 'wrong_incorrect_password'
+    });
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.success, false);
+    assert.strictEqual(res.body.error, 'Invalid username or password.');
+  });
+
+  await test('Admin Login: POST /api/admin/login with valid credentials sets secure HttpOnly session cookie', async () => {
+    const res = await request('POST', '/api/admin/login', {
+      username: TEST_ADMIN_USERNAME,
+      password: TEST_ADMIN_PASSWORD
+    });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
-    assert.ok(res.body.response != null);
+    assert.strictEqual(res.body.authenticated, true);
+
+    const setCookie = res.headers['set-cookie'];
+    assert.ok(setCookie != null, 'Expected Set-Cookie header');
+    const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie;
+    assert.ok(cookieStr.includes('mira_session='), 'Expected mira_session cookie name');
+    assert.ok(cookieStr.includes('HttpOnly'), 'Expected HttpOnly attribute');
+    assert.ok(cookieStr.includes('SameSite=Strict'), 'Expected SameSite=Strict attribute');
+    assert.ok(cookieStr.includes('Max-Age='), 'Expected Max-Age attribute');
+
+    validSessionCookie = extractCookieValue(setCookie, 'mira_session');
+    assert.ok(validSessionCookie && validSessionCookie.length >= 32, 'Expected 256-bit session token');
   });
 
-  await test('Payload Limits: Oversized prompt (>2,000 chars) is rejected (400 Bad Request)', async () => {
-    const giantPrompt = 'A'.repeat(2005);
-    const res = await request('POST', '/api/chat', { message: giantPrompt });
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.includes('2,000 characters'));
-  });
-
-  await test('Payload Limits: Excessive conversation history (>10 messages) is rejected (400 Bad Request)', async () => {
-    const history = [];
-    for (let i = 0; i < 11; i++) {
-      history.push({ role: 'user', content: `Message number ${i}` });
-    }
-    const res = await request('POST', '/api/chat', { messages: history });
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.includes('10 messages'));
-  });
-
-  await test('Payload Limits: Excessive total conversation characters (>8,000 chars) is rejected (400 Bad Request)', async () => {
-    const history = [
-      { role: 'user', content: 'B'.repeat(4500) },
-      { role: 'assistant', content: 'C'.repeat(4000) }
-    ];
-    const res = await request('POST', '/api/chat', { messages: history });
-    assert.strictEqual(res.status, 400);
-    assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.includes('8,000 characters'));
-  });
-
-  await test('Payload Limits: Oversized JSON body (>64KB) returns 413 Payload Too Large', async () => {
-    const giantPayload = JSON.stringify({ message: 'x', padding: '0'.repeat(70 * 1024) });
-    const res = await request('POST', '/api/chat', giantPayload, { 'Content-Type': 'application/json' });
-    assert.strictEqual(res.status, 413);
-    assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.includes('64KB limit'));
-  });
-
-  // ─── 4. STATIC FILE EXPOSURE CHECKS ───
-  await test('Static Exposure: GET /backend/server.js is blocked (404)', async () => {
-    const res = await request('GET', '/backend/server.js');
-    assert.strictEqual(res.status, 404);
-  });
-
-  await test('Static Exposure: GET /backend/data/candidate-cache.json is blocked (404)', async () => {
-    const res = await request('GET', '/backend/data/candidate-cache.json');
-    assert.strictEqual(res.status, 404);
-  });
-
-  await test('Static Exposure: GET /backend/data/candidate-promotion-log.json is blocked (404)', async () => {
-    const res = await request('GET', '/backend/data/candidate-promotion-log.json');
-    assert.strictEqual(res.status, 404);
-  });
-
-  await test('Static Exposure: GET /backend/prompts/system.js is blocked (404)', async () => {
-    const res = await request('GET', '/backend/prompts/system.js');
-    assert.strictEqual(res.status, 404);
-  });
-
-  // ─── 5. ROUTE HOUSEKEEPING (SEC-06) ───
-  await test('Route Housekeeping: POST /api/test is removed (404 Not Found)', async () => {
-    const res = await request('POST', '/api/test', { message: 'test' });
-    assert.strictEqual(res.status, 404);
-  });
-
-  // ─── 6. ADMIN GUI AUTHENTICATION ENFORCEMENT CHECKS ───
-  await test('Admin GUI Auth: Unauthenticated GET /admin/ is rejected (401 + WWW-Authenticate)', async () => {
-    const res = await request('GET', '/admin/');
-    assert.strictEqual(res.status, 401);
-    assert.ok(res.headers['www-authenticate'] != null);
-    assert.ok(res.headers['www-authenticate'].includes('Basic realm='));
-  });
-
-  await test('Admin GUI Auth: GET /admin/ with invalid credentials is rejected (401)', async () => {
-    const invalidBasic = { 'Authorization': 'Basic ' + Buffer.from('admin:wrong_password').toString('base64') };
-    const res = await request('GET', '/admin/', null, invalidBasic);
-    assert.strictEqual(res.status, 401);
-  });
-
-  await test('Admin GUI Auth: Authenticated GET /admin/ with valid Basic Auth succeeds (200 HTML)', async () => {
-    const res = await request('GET', '/admin/', null, basicAuthHeader);
+  // ─── 5. SESSION COOKIE AUTHORIZATION (PATH A) ───
+  await test('Session Auth: Authenticated GET /api/admin/stats using session cookie succeeds (200 OK)', async () => {
+    assert.ok(validSessionCookie, 'Valid session cookie required from prior test');
+    const res = await request('GET', '/api/admin/stats', null, {
+      'Cookie': `mira_session=${validSessionCookie}`
+    });
     assert.strictEqual(res.status, 200);
-    assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
+    assert.strictEqual(res.body.success, true);
+    assert.strictEqual(typeof res.body.totalCandidates, 'number');
   });
 
-  await test('Admin GUI Auth: Authenticated GET /admin/ with x-admin-key succeeds (200 HTML)', async () => {
-    const res = await request('GET', '/admin/', null, authHeader);
+  await test('Session Auth: GET /api/admin/stats with forged/invalid session cookie returns 401 Unauthorized', async () => {
+    const res = await request('GET', '/api/admin/stats', null, {
+      'Cookie': 'mira_session=fake_invalid_forged_session_token_1234567890'
+    });
+    assert.strictEqual(res.status, 401);
+    assert.strictEqual(res.body.success, false);
+    assert.strictEqual(res.body.error, 'Unauthorized.');
+  });
+
+  // ─── 6. LOGOUT ENDPOINT (POST /api/admin/logout) ───
+  await test('Session Logout: POST /api/admin/logout invalidates session and clears cookie', async () => {
+    assert.ok(validSessionCookie, 'Valid session cookie required');
+    const res = await request('POST', '/api/admin/logout', {}, {
+      'Cookie': `mira_session=${validSessionCookie}`
+    });
     assert.strictEqual(res.status, 200);
-    assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
+    assert.strictEqual(res.body.success, true);
+
+    const setCookie = res.headers['set-cookie'];
+    assert.ok(setCookie != null, 'Expected Set-Cookie header to clear cookie');
+    const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : setCookie;
+    assert.ok(cookieStr.includes('Max-Age=0') || cookieStr.includes('Expires='), 'Expected cookie invalidation attribute');
+
+    // Verify session is no longer authorized
+    const checkRes = await request('GET', '/api/admin/stats', null, {
+      'Cookie': `mira_session=${validSessionCookie}`
+    });
+    assert.strictEqual(checkRes.status, 401);
+    assert.strictEqual(checkRes.body.success, false);
   });
 
-  // ─── 7. ADMIN API AUTHENTICATION & FAILED-AUTH THROTTLING (SEC-02) ───
-  await test('Admin Auth: GET /api/admin/stats without x-admin-key returns 401 Unauthorized', async () => {
+  // ─── 7. BACKWARD-COMPATIBLE API KEY AUTHORIZATION (PATH B) ───
+  await test('Admin Auth: GET /api/admin/stats without credentials returns 401 Unauthorized', async () => {
     const res = await request('GET', '/api/admin/stats');
     assert.strictEqual(res.status, 401);
     assert.strictEqual(res.body.success, false);
@@ -260,13 +269,6 @@ async function runAdminApiTests() {
     assert.strictEqual(res.body.error, 'Unauthorized.');
   });
 
-  await test('Admin Auth: Valid credentials succeed and reset failure counter', async () => {
-    const res = await request('GET', '/api/admin/stats', null, authHeader);
-    assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.success, true);
-  });
-
-  // ─── 8. AUTHENTICATED GOVERNANCE ACTIONS ───
   await test('Admin Auth: GET /api/admin/stats with valid x-admin-key returns 200 OK', async () => {
     const res = await request('GET', '/api/admin/stats', null, authHeader);
     assert.strictEqual(res.status, 200);
@@ -332,7 +334,80 @@ async function runAdminApiTests() {
     assert.strictEqual(res.body.success, false);
   });
 
-  // ─── 9. RATE LIMITING STRESS ASSERTION (SEC-01) ───
+  // ─── 8. PAYLOAD & PROMPT BOUNDS (SEC-05) ───
+  await test('Payload Limits: Normal message (100 chars) succeeds (200 OK)', async () => {
+    const res = await request('POST', '/api/chat', { message: 'What is Moses\'s background?' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+    assert.ok(res.body.response != null);
+  });
+
+  await test('Payload Limits: Oversized prompt (>2,000 chars) is rejected (400 Bad Request)', async () => {
+    const giantPrompt = 'A'.repeat(2005);
+    const res = await request('POST', '/api/chat', { message: giantPrompt });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('2,000 characters'));
+  });
+
+  await test('Payload Limits: Excessive conversation history (>10 messages) is rejected (400 Bad Request)', async () => {
+    const history = [];
+    for (let i = 0; i < 11; i++) {
+      history.push({ role: 'user', content: `Message number ${i}` });
+    }
+    const res = await request('POST', '/api/chat', { messages: history });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('10 messages'));
+  });
+
+  await test('Payload Limits: Excessive total conversation characters (>8,000 chars) is rejected (400 Bad Request)', async () => {
+    const history = [
+      { role: 'user', content: 'B'.repeat(4500) },
+      { role: 'assistant', content: 'C'.repeat(4000) }
+    ];
+    const res = await request('POST', '/api/chat', { messages: history });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('8,000 characters'));
+  });
+
+  await test('Payload Limits: Oversized JSON body (>64KB) returns 413 Payload Too Large', async () => {
+    const giantPayload = JSON.stringify({ message: 'x', padding: '0'.repeat(70 * 1024) });
+    const res = await request('POST', '/api/chat', giantPayload, { 'Content-Type': 'application/json' });
+    assert.strictEqual(res.status, 413);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('64KB limit'));
+  });
+
+  // ─── 9. STATIC FILE EXPOSURE CHECKS ───
+  await test('Static Exposure: GET /backend/server.js is blocked (404)', async () => {
+    const res = await request('GET', '/backend/server.js');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/data/candidate-cache.json is blocked (404)', async () => {
+    const res = await request('GET', '/backend/data/candidate-cache.json');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/data/candidate-promotion-log.json is blocked (404)', async () => {
+    const res = await request('GET', '/backend/data/candidate-promotion-log.json');
+    assert.strictEqual(res.status, 404);
+  });
+
+  await test('Static Exposure: GET /backend/prompts/system.js is blocked (404)', async () => {
+    const res = await request('GET', '/backend/prompts/system.js');
+    assert.strictEqual(res.status, 404);
+  });
+
+  // ─── 10. ROUTE HOUSEKEEPING (SEC-06) ───
+  await test('Route Housekeeping: POST /api/test is removed (404 Not Found)', async () => {
+    const res = await request('POST', '/api/test', { message: 'test' });
+    assert.strictEqual(res.status, 404);
+  });
+
+  // ─── 11. RATE LIMITING STRESS ASSERTION (SEC-01) ───
   await test('Rate Limiting: /api/chat enforces per-minute ceiling and returns 429 + Retry-After', async () => {
     let triggered429 = false;
     let retryAfterFound = false;

@@ -37,33 +37,28 @@ const state = {
   pendingAction: null
 };
 
-// Authentication helper for Governance API
-function getAdminKey() {
-  let key = sessionStorage.getItem('mira_admin_key');
-  if (!key) {
-    key = prompt('Enter MIRA Knowledge Governance Passkey:');
-    if (key) {
-      sessionStorage.setItem('mira_admin_key', key.trim());
-    }
-  }
-  return key ? key.trim() : '';
-}
-
+// Authentication helper for Governance API (Phase 3B Session Cookie)
 async function authFetch(url, options = {}) {
-  const key = getAdminKey();
-  const headers = {
-    ...(options.headers || {}),
-    'x-admin-key': key
+  const opts = {
+    ...options,
+    credentials: 'same-origin',
+    headers: {
+      ...(options.headers || {})
+    }
   };
 
-  const res = await fetch(url, { ...options, headers });
+  const res = await fetch(url, opts);
   if (res.status === 401) {
-    sessionStorage.removeItem('mira_admin_key');
-    alert('Unauthorized: Invalid or missing Admin Passkey. Please authenticate.');
+    showLogin('Session expired or unauthorized. Please sign in.');
     throw new Error('HTTP 401: Unauthorized');
   }
+  if (res.status === 429) {
+    const retryAfter = res.headers.get('Retry-After') || 300;
+    showToast(`Rate limit reached. Please wait ${retryAfter}s before retrying.`, 'warning');
+    throw new Error('HTTP 429: Too Many Requests');
+  }
   if (res.status === 503) {
-    alert('Service Unavailable: Admin authentication is not configured on the backend.');
+    showLogin('Service Unavailable: Admin authentication is not configured on the backend.');
     throw new Error('HTTP 503: Admin authentication not configured.');
   }
   return res;
@@ -195,6 +190,18 @@ const api = {
 
 // UI Elements
 const el = {
+  // Login & Session Elements (Phase 3B)
+  loginOverlay: document.getElementById('loginOverlay'),
+  appContainer: document.getElementById('appContainer'),
+  loginForm: document.getElementById('loginForm'),
+  loginUsername: document.getElementById('loginUsername'),
+  loginPassword: document.getElementById('loginPassword'),
+  loginSubmitBtn: document.getElementById('loginSubmitBtn'),
+  loginErrorMessage: document.getElementById('loginErrorMessage'),
+  togglePasswordBtn: document.getElementById('togglePasswordBtn'),
+  eyeIcon: document.getElementById('eyeIcon'),
+  logoutBtn: document.getElementById('logoutBtn'),
+
   statusText: document.getElementById('statusText'),
   refreshAllBtn: document.getElementById('refreshAllBtn'),
 
@@ -1521,6 +1528,17 @@ function setupEventListeners() {
     });
   }
 
+  // Login & Session Handlers (Phase 3B)
+  if (el.loginForm) {
+    el.loginForm.addEventListener('submit', handleLoginSubmit);
+  }
+  if (el.togglePasswordBtn) {
+    el.togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+  }
+  if (el.logoutBtn) {
+    el.logoutBtn.addEventListener('click', handleLogout);
+  }
+
   // Keyboard Shortcuts
   document.addEventListener('keydown', (e) => {
     // Modal Shortcuts
@@ -1581,6 +1599,131 @@ function setupEventListeners() {
       }
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════
+// LOGIN & SESSION MANAGEMENT (PHASE 3B)
+// ══════════════════════════════════════════════════════════
+
+function showLogin(errorMessage = null) {
+  if (el.loginOverlay) el.loginOverlay.style.display = 'flex';
+  if (el.appContainer) el.appContainer.style.display = 'none';
+  if (el.loginErrorMessage) {
+    if (errorMessage) {
+      el.loginErrorMessage.textContent = errorMessage;
+      el.loginErrorMessage.style.display = 'block';
+    } else {
+      el.loginErrorMessage.style.display = 'none';
+    }
+  }
+  if (el.loginUsername) el.loginUsername.focus();
+}
+
+function showConsole() {
+  if (el.loginOverlay) el.loginOverlay.style.display = 'none';
+  if (el.appContainer) el.appContainer.style.display = 'block';
+  if (el.loginErrorMessage) el.loginErrorMessage.style.display = 'none';
+}
+
+function togglePasswordVisibility() {
+  if (!el.loginPassword) return;
+  const isPassword = el.loginPassword.type === 'password';
+  el.loginPassword.type = isPassword ? 'text' : 'password';
+  if (el.eyeIcon) {
+    el.eyeIcon.innerHTML = isPassword
+      ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+      : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+async function handleLoginSubmit(e) {
+  e.preventDefault();
+  const username = el.loginUsername ? el.loginUsername.value.trim() : '';
+  const password = el.loginPassword ? el.loginPassword.value : '';
+
+  if (!username || !password) {
+    showLogin('Username and password are required.');
+    return;
+  }
+
+  const btnText = el.loginSubmitBtn ? el.loginSubmitBtn.querySelector('.btn-text') : null;
+  const btnSpinner = el.loginSubmitBtn ? el.loginSubmitBtn.querySelector('.btn-spinner') : null;
+  if (btnText) btnText.style.display = 'none';
+  if (btnSpinner) btnSpinner.style.display = 'inline-block';
+  if (el.loginSubmitBtn) el.loginSubmitBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await res.json().catch(() => ({}));
+
+    if (res.ok && data.success) {
+      if (el.loginPassword) el.loginPassword.value = '';
+      showConsole();
+      await initApp();
+      showToast('Authenticated as ' + username, 'success');
+    } else if (res.status === 429) {
+      showLogin('Too many failed attempts. Please wait before trying again.');
+    } else if (res.status === 503) {
+      showLogin('Admin authentication is not configured on the server.');
+    } else {
+      showLogin('Invalid username or password.');
+    }
+  } catch (err) {
+    showLogin('Connection error. Please check backend server status.');
+  } finally {
+    if (btnText) btnText.style.display = 'inline-block';
+    if (btnSpinner) btnSpinner.style.display = 'none';
+    if (el.loginSubmitBtn) el.loginSubmitBtn.disabled = false;
+  }
+}
+
+async function handleLogout() {
+  try {
+    await fetch('/api/admin/logout', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+  } catch (e) {
+    // Ignore network error on logout
+  }
+  showLogin();
+  showToast('Logged out successfully.', 'info');
+}
+
+// ══════════════════════════════════════════════════════════
+// INITIALIZATION
+// ══════════════════════════════════════════════════════════
+
+async function initApp() {
+  try {
+    updateSystemStatus('connecting', 'Authenticating...');
+    const statsData = await api.getStats();
+    showConsole();
+    updateSystemStatus('online', 'Live Connected');
+    state.stats = statsData;
+    renderKPIs(statsData);
+    await Promise.all([
+      loadCandidates(),
+      loadFaqs(),
+      loadLogs()
+    ]);
+  } catch (err) {
+    console.warn('[Governance Init] Session check / Init failed:', err.message);
+    if (err.message.includes('401')) {
+      showLogin();
+    } else if (err.message.includes('503')) {
+      showLogin('Admin authentication is not configured on the server.');
+    } else {
+      updateSystemStatus('offline', 'Error Connecting');
+      showLogin('Failed to connect to backend.');
+    }
+  }
 }
 
 // Window load bootstrap
