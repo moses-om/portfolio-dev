@@ -360,7 +360,13 @@ async function initApp() {
   } catch (err) {
     el.statusText.textContent = 'Error';
     console.error('Initialization Error:', err);
-    showToast(`Connection failed: ${err.message}`, 'error');
+    if (err.message && err.message.includes('401')) {
+      showLogin();
+    } else if (err.message && err.message.includes('503')) {
+      showLogin('Admin authentication is not configured on the server.');
+    } else {
+      showToast(`Connection failed: ${err.message}`, 'error');
+    }
   }
 }
 
@@ -1605,40 +1611,6 @@ function setupEventListeners() {
 // LOGIN & SESSION MANAGEMENT (PHASE 3B)
 // ══════════════════════════════════════════════════════════
 
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  if (!container) return;
-  const toast = document.createElement('div');
-  toast.className = `toast toast-${type}`;
-  toast.textContent = message;
-  toast.style.cssText = `
-    padding: 10px 16px;
-    margin-top: 8px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #fff;
-    background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6'};
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    opacity: 0;
-    transform: translateY(10px);
-    pointer-events: auto;
-  `;
-  container.appendChild(toast);
-  requestAnimationFrame(() => {
-    toast.style.opacity = '1';
-    toast.style.transform = 'translateY(0)';
-  });
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transform = 'translateY(10px)';
-    setTimeout(() => {
-      if (toast.parentNode) toast.parentNode.removeChild(toast);
-    }, 300);
-  }, 3500);
-}
-
 function showLogin(errorMessage = null) {
   if (el.loginOverlay) el.loginOverlay.style.display = 'flex';
   if (el.appContainer) el.appContainer.style.display = 'none';
@@ -1686,37 +1658,45 @@ async function handleLoginSubmit(e) {
   if (btnSpinner) btnSpinner.style.display = 'inline-block';
   if (el.loginSubmitBtn) el.loginSubmitBtn.disabled = true;
 
+  let res, data;
   try {
-    const res = await fetch('/api/admin/login', {
+    res = await fetch('/api/admin/login', {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-
-    const data = await res.json().catch(() => ({}));
-
-    if (res.ok && data.success) {
-      if (el.loginPassword) el.loginPassword.value = '';
-      showConsole();
-      await initApp();
-      showToast('Authenticated as ' + username, 'success');
-    } else if (res.status === 401) {
-      showLogin('Invalid username or password.');
-    } else if (res.status === 429) {
-      showLogin('Too many failed attempts. Please wait before trying again.');
-    } else if (res.status === 503) {
-      showLogin('Admin authentication is not configured on the server.');
-    } else {
-      showLogin('A server error occurred. Please try again.');
-    }
-  } catch (err) {
+    data = await res.json().catch(() => ({}));
+  } catch (netErr) {
     showLogin('Connection error. Please check backend server status.');
-  } finally {
     if (btnText) btnText.style.display = 'inline-block';
     if (btnSpinner) btnSpinner.style.display = 'none';
     if (el.loginSubmitBtn) el.loginSubmitBtn.disabled = false;
+    return;
   }
+
+  if (res.ok && data && data.success) {
+    if (el.loginPassword) el.loginPassword.value = '';
+    showConsole();
+    try {
+      await initApp();
+      showToast('Authenticated as ' + username, 'success');
+    } catch (uiErr) {
+      console.warn('[Post-Login UI Warning]:', uiErr);
+    }
+  } else if (res.status === 401) {
+    showLogin('Invalid username or password.');
+  } else if (res.status === 429) {
+    showLogin('Too many failed attempts. Please wait before trying again.');
+  } else if (res.status === 503) {
+    showLogin('Admin authentication is not configured on the server.');
+  } else {
+    showLogin('A server error occurred. Please try again.');
+  }
+
+  if (btnText) btnText.style.display = 'inline-block';
+  if (btnSpinner) btnSpinner.style.display = 'none';
+  if (el.loginSubmitBtn) el.loginSubmitBtn.disabled = false;
 }
 
 async function handleLogout() {
@@ -1730,36 +1710,6 @@ async function handleLogout() {
   }
   showLogin();
   showToast('Logged out successfully.', 'info');
-}
-
-// ══════════════════════════════════════════════════════════
-// INITIALIZATION
-// ══════════════════════════════════════════════════════════
-
-async function initApp() {
-  try {
-    updateSystemStatus('connecting', 'Authenticating...');
-    const statsData = await api.getStats();
-    showConsole();
-    updateSystemStatus('online', 'Live Connected');
-    state.stats = statsData;
-    renderKPIs(statsData);
-    await Promise.all([
-      loadCandidates(),
-      loadFaqs(),
-      loadLogs()
-    ]);
-  } catch (err) {
-    console.warn('[Governance Init] Session check / Init failed:', err.message);
-    if (err.message.includes('401')) {
-      showLogin();
-    } else if (err.message.includes('503')) {
-      showLogin('Admin authentication is not configured on the server.');
-    } else {
-      updateSystemStatus('offline', 'Error Connecting');
-      showLogin('Failed to connect to backend.');
-    }
-  }
 }
 
 // Window load bootstrap
