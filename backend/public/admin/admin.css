@@ -1842,17 +1842,60 @@ body.admin-body {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  width: 100%;
+}
+
+.login-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+}
+
+.login-form .form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.login-form .form-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-sm, 8px);
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.login-form .form-input:focus {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
+}
+
+.login-form .form-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 13.5px;
 }
 
 .password-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
+  width: 100%;
 }
 
 .password-input-wrapper .form-input {
   width: 100%;
-  padding-right: 42px;
+  padding-right: 44px;
 }
 
 .password-toggle-btn {
@@ -1864,7 +1907,7 @@ body.admin-body {
   border: none;
   color: rgba(255, 255, 255, 0.45);
   cursor: pointer;
-  padding: 6px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1879,10 +1922,14 @@ body.admin-body {
 
 .btn-block {
   width: 100%;
+  height: 46px;
   justify-content: center;
-  padding: 12px;
+  padding: 0 16px;
   font-size: 14px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm, 8px);
 }
 
 .btn-spinner {

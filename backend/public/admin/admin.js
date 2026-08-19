@@ -5,6 +5,7 @@
 
 // Application State
 const state = {
+  isAuthenticated: false,
   activeTab: 'queue',
   stats: null,
   faqs: [],
@@ -49,7 +50,12 @@ async function authFetch(url, options = {}) {
 
   const res = await fetch(url, opts);
   if (res.status === 401) {
-    showLogin('Session expired or unauthorized. Please sign in.');
+    if (state.isAuthenticated) {
+      state.isAuthenticated = false;
+      showLogin('Your session has expired. Please sign in again.');
+    } else {
+      showLogin(); // Clean login screen for initial unauthenticated state
+    }
     throw new Error('HTTP 401: Unauthorized');
   }
   if (res.status === 429) {
@@ -58,7 +64,7 @@ async function authFetch(url, options = {}) {
     throw new Error('HTTP 429: Too Many Requests');
   }
   if (res.status === 503) {
-    showLogin('Service Unavailable: Admin authentication is not configured on the backend.');
+    showLogin('Admin authentication is not configured on the server.');
     throw new Error('HTTP 503: Admin authentication not configured.');
   }
   return res;
@@ -355,16 +361,22 @@ async function initApp() {
       loadCandidates(),
       loadLogs()
     ]);
+    state.isAuthenticated = true;
     el.statusText.textContent = 'System Active';
-    showToast('Governance repository connected successfully.', 'success');
+    showConsole();
   } catch (err) {
     el.statusText.textContent = 'Error';
-    console.error('Initialization Error:', err);
     if (err.message && err.message.includes('401')) {
-      showLogin();
+      if (state.isAuthenticated) {
+        state.isAuthenticated = false;
+        showLogin('Your session has expired. Please sign in again.');
+      } else {
+        showLogin(); // Clean login screen for initial unauthenticated visit
+      }
     } else if (err.message && err.message.includes('503')) {
       showLogin('Admin authentication is not configured on the server.');
     } else {
+      console.error('Initialization Error:', err);
       showToast(`Connection failed: ${err.message}`, 'error');
     }
   }
@@ -1676,6 +1688,7 @@ async function handleLoginSubmit(e) {
   }
 
   if (res.ok && data && data.success) {
+    state.isAuthenticated = true;
     if (el.loginPassword) el.loginPassword.value = '';
     showConsole();
     try {
@@ -1700,6 +1713,7 @@ async function handleLoginSubmit(e) {
 }
 
 async function handleLogout() {
+  state.isAuthenticated = false;
   try {
     await fetch('/api/admin/logout', {
       method: 'POST',
