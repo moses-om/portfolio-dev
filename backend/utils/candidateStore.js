@@ -9,8 +9,88 @@ const path = require('path');
 const { tokenize, jaccardSimilarity } = require('./cacheMatcher');
 const { recordCandidateStaged, recordCandidateRejected } = require('./metrics');
 
-const CANDIDATE_CACHE_PATH = path.join(__dirname, '..', 'data', 'candidate-cache.json');
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const SEEDS_DIR = path.join(DATA_DIR, 'seeds');
+
+const CANDIDATE_CACHE_PATH = path.join(DATA_DIR, 'candidate-cache.json');
+const CANDIDATE_SEED_PATH = path.join(SEEDS_DIR, 'candidate-baseline.json');
+
+const PROMOTION_LOG_PATH = path.join(DATA_DIR, 'candidate-promotion-log.json');
+const PROMOTION_LOG_SEED_PATH = path.join(SEEDS_DIR, 'candidate-promotion-log-baseline.json');
+
 const CANDIDATE_SIMILARITY_THRESHOLD = 0.70;
+
+/**
+ * Bootstraps a single runtime JSON file from its immutable baseline seed if missing or empty.
+ *
+ * Rules:
+ * 1. Runtime file exists and has non-empty array -> NO-OP (preserves active runtime state).
+ * 2. Runtime file does not exist -> Atomic copy from baseline seed.
+ * 3. Runtime file exists but is empty [] -> Atomic copy from baseline seed.
+ * 4. Runtime file exists but is malformed JSON -> DO NOT overwrite; log clear error.
+ */
+function bootstrapFile(runtimePath, seedPath, label) {
+  let shouldSeed = false;
+
+  if (fs.existsSync(runtimePath)) {
+    try {
+      const raw = fs.readFileSync(runtimePath, 'utf8').trim();
+      if (!raw) {
+        shouldSeed = true;
+      } else {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          if (parsed.length === 0) {
+            shouldSeed = true;
+          }
+          // Non-empty array -> valid active state, leave untouched
+        } else {
+          console.warn(`[Governance Baseline] Warning: ${label} at ${runtimePath} is not an array. Preserving existing file without overwrite.`);
+        }
+      }
+    } catch (err) {
+      console.error(`[Governance Baseline] Error: Malformed JSON in ${label} at ${runtimePath} (${err.message}). Preserving existing file without overwrite.`);
+    }
+  } else {
+    shouldSeed = true;
+  }
+
+  if (shouldSeed) {
+    if (fs.existsSync(seedPath)) {
+      try {
+        const rawSeed = fs.readFileSync(seedPath, 'utf8');
+        const parsedSeed = JSON.parse(rawSeed);
+        if (Array.isArray(parsedSeed) && parsedSeed.length > 0) {
+          const tempPath = `${runtimePath}.tmp.${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+          fs.writeFileSync(tempPath, JSON.stringify(parsedSeed, null, 2), 'utf8');
+          fs.renameSync(tempPath, runtimePath);
+          console.log(`[Governance Baseline] Initialized ${label} from seed with ${parsedSeed.length} baseline records.`);
+          return { seeded: true, count: parsedSeed.length };
+        }
+      } catch (seedErr) {
+        console.error(`[Governance Baseline] Failed to initialize ${label} from seed:`, seedErr.message);
+      }
+    } else {
+      if (!fs.existsSync(runtimePath)) {
+        fs.writeFileSync(runtimePath, '[]', 'utf8');
+        return { seeded: true, count: 0 };
+      }
+    }
+  }
+
+  return { seeded: false };
+}
+
+/**
+ * Executes bootstrap across all governance runtime stores.
+ */
+function bootstrapGovernanceBaseline() {
+  bootstrapFile(CANDIDATE_CACHE_PATH, CANDIDATE_SEED_PATH, 'Candidate Cache');
+  bootstrapFile(PROMOTION_LOG_PATH, PROMOTION_LOG_SEED_PATH, 'Candidate Promotion Log');
+}
+
+// Execute baseline bootstrap immediately on module initialization
+bootstrapGovernanceBaseline();
 
 // Injection & Command Patterns
 const INJECTION_PATTERNS = [
@@ -202,5 +282,7 @@ function stageCandidate(query, responseText, modelUsed = 'gemini-3.6-flash') {
 module.exports = {
   loadCandidates,
   validateCandidateSafety,
-  stageCandidate
+  stageCandidate,
+  bootstrapGovernanceBaseline,
+  bootstrapFile
 };
