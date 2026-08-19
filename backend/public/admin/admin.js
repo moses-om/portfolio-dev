@@ -1605,6 +1605,40 @@ function setupEventListeners() {
 // LOGIN & SESSION MANAGEMENT (PHASE 3B)
 // ══════════════════════════════════════════════════════════
 
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
+  toast.style.cssText = `
+    padding: 10px 16px;
+    margin-top: 8px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    background: ${type === 'success' ? '#10b981' : type === 'warning' ? '#f59e0b' : type === 'error' ? '#ef4444' : '#3b82f6'};
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: auto;
+  `;
+  container.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(10px)';
+    setTimeout(() => {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }, 3500);
+}
+
 function showLogin(errorMessage = null) {
   if (el.loginOverlay) el.loginOverlay.style.display = 'flex';
   if (el.appContainer) el.appContainer.style.display = 'none';
