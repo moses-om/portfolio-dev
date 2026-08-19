@@ -36,7 +36,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// CORS configuration - allow local development and GitHub Pages production frontend
+// CORS configuration - allow local development, GitHub Pages production frontend, and Render production backend
 const allowedOrigins = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -44,7 +44,8 @@ const allowedOrigins = [
   'http://127.0.0.1:3001',
   'http://localhost:8000',
   'http://127.0.0.1:8000',
-  'https://moses-om.github.io'
+  'https://moses-om.github.io',
+  'https://moses-ai-backend.onrender.com'
 ];
 
 app.use(cors({

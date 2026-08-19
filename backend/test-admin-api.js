@@ -111,6 +111,12 @@ async function runAdminApiTests() {
     assert.strictEqual(res.headers['access-control-allow-origin'], 'http://localhost:3000');
   });
 
+  await test('CORS allows official Render backend origin (https://moses-ai-backend.onrender.com)', async () => {
+    const res = await request('GET', '/api/health', null, { 'Origin': 'https://moses-ai-backend.onrender.com' });
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.headers['access-control-allow-origin'], 'https://moses-ai-backend.onrender.com');
+  });
+
   await test('CORS blocks arbitrary unapproved origin (https://evil.example)', async () => {
     const res = await request('GET', '/api/health', null, { 'Origin': 'https://evil.example' });
     assert.notStrictEqual(res.headers['access-control-allow-origin'], 'https://evil.example');

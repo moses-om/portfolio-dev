@@ -1667,12 +1667,14 @@ async function handleLoginSubmit(e) {
       showConsole();
       await initApp();
       showToast('Authenticated as ' + username, 'success');
+    } else if (res.status === 401) {
+      showLogin('Invalid username or password.');
     } else if (res.status === 429) {
       showLogin('Too many failed attempts. Please wait before trying again.');
     } else if (res.status === 503) {
       showLogin('Admin authentication is not configured on the server.');
     } else {
-      showLogin('Invalid username or password.');
+      showLogin('A server error occurred. Please try again.');
     }
   } catch (err) {
     showLogin('Connection error. Please check backend server status.');
