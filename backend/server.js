@@ -24,7 +24,17 @@ try {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3001;
+
+// Centralized HTTP Security Headers Middleware
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
 
 // CORS configuration - allow local development and GitHub Pages production frontend
 const allowedOrigins = [
@@ -48,7 +58,126 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json());
+app.use(express.json({ limit: '64kb' }));
+
+// Handle JSON body limit (413) and malformed syntax (400) gracefully
+app.use((err, req, res, next) => {
+  if (err && (err.type === 'entity.too.large' || err.status === 413)) {
+    return res.status(413).json({
+      success: false,
+      error: 'Payload too large. Request body exceeds the 64KB limit.'
+    });
+  }
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      error: 'Malformed JSON in request body. Please ensure valid JSON structure.'
+    });
+  }
+  next(err);
+});
+
+/**
+ * Zero-Dependency In-Memory Sliding-Window Rate Limiter
+ */
+function createRateLimiter({ windowMs, maxRequests, message }) {
+  const hits = new Map();
+  const MAX_TRACKED_IPS = 10000;
+
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, timestamps] of hits.entries()) {
+      const valid = timestamps.filter(t => now - t < windowMs);
+      if (valid.length === 0) hits.delete(ip);
+      else hits.set(ip, valid);
+    }
+  }, 60000);
+  timer.unref();
+
+  return (req, res, next) => {
+    const now = Date.now();
+    const clientKey = req.ip || req.socket.remoteAddress || 'unknown';
+
+    let timestamps = hits.get(clientKey) || [];
+    timestamps = timestamps.filter(t => now - t < windowMs);
+
+    if (timestamps.length >= maxRequests) {
+      const oldest = timestamps[0];
+      const retryAfterSec = Math.max(1, Math.ceil((oldest + windowMs - now) / 1000));
+      res.setHeader('Retry-After', retryAfterSec);
+      return res.status(429).json({
+        success: false,
+        error: message || 'Too many requests. Please try again later.',
+        retryAfter: retryAfterSec
+      });
+    }
+
+    timestamps.push(now);
+    if (hits.size < MAX_TRACKED_IPS || hits.has(clientKey)) {
+      hits.set(clientKey, timestamps);
+    }
+    return next();
+  };
+}
+
+const chatLimiter = createRateLimiter({
+  windowMs: 60000,
+  maxRequests: 30,
+  message: 'Rate limit exceeded. Please wait a moment before sending another message.'
+});
+
+const publicProbeLimiter = createRateLimiter({
+  windowMs: 60000,
+  maxRequests: 120,
+  message: 'Rate limit exceeded. Please reduce request frequency.'
+});
+
+/**
+ * Admin Failed-Authentication Throttling Tracker
+ */
+const adminFailedAuth = new Map(); // IP -> Array<number> (timestamps of failed attempts)
+const ADMIN_AUTH_WINDOW_MS = 300000; // 5 minutes
+const MAX_ADMIN_FAILURES = 10;
+
+const adminTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [ip, timestamps] of adminFailedAuth.entries()) {
+    const valid = timestamps.filter(t => now - t < ADMIN_AUTH_WINDOW_MS);
+    if (valid.length === 0) adminFailedAuth.delete(ip);
+    else adminFailedAuth.set(ip, valid);
+  }
+}, 60000);
+adminTimer.unref();
+
+function checkAdminFailedThrottling(clientIp, res) {
+  const now = Date.now();
+  let timestamps = adminFailedAuth.get(clientIp) || [];
+  timestamps = timestamps.filter(t => now - t < ADMIN_AUTH_WINDOW_MS);
+  if (timestamps.length >= MAX_ADMIN_FAILURES) {
+    const oldest = timestamps[0];
+    const retryAfterSec = Math.max(1, Math.ceil((oldest + ADMIN_AUTH_WINDOW_MS - now) / 1000));
+    res.setHeader('Retry-After', retryAfterSec);
+    res.status(429).json({
+      success: false,
+      error: 'Too many failed authentication attempts. Access temporarily suspended for 5 minutes.',
+      retryAfter: retryAfterSec
+    });
+    return true;
+  }
+  return false;
+}
+
+function recordAdminAuthFailure(clientIp) {
+  const now = Date.now();
+  let timestamps = adminFailedAuth.get(clientIp) || [];
+  timestamps = timestamps.filter(t => now - t < ADMIN_AUTH_WINDOW_MS);
+  timestamps.push(now);
+  adminFailedAuth.set(clientIp, timestamps);
+}
+
+function clearAdminAuthFailures(clientIp) {
+  adminFailedAuth.delete(clientIp);
+}
 
 /**
  * Helper for timing-safe key verification
@@ -78,13 +207,36 @@ function extractBasicAuthKey(authHeader) {
 }
 
 /**
- * Admin GUI Authentication Middleware for /admin/ (HTTP Basic Auth challenge)
+ * Administrative Response Headers Middleware (no-store, private)
+ */
+function applyAdminHeaders(req, res, next) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+}
+
+/**
+ * Admin GUI CSP Middleware
+ */
+function applyAdminCsp(req, res, next) {
+  res.setHeader('Content-Security-Policy', "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self';");
+  next();
+}
+
+/**
+ * Admin GUI Authentication Middleware for /admin/ (HTTP Basic Auth challenge + Throttling)
  */
 function authenticateAdminGui(req, res, next) {
   const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
 
   if (!adminApiKey) {
     return res.status(503).send('503 Service Unavailable: Admin authentication is not configured on the server.');
+  }
+
+  if (checkAdminFailedThrottling(clientIp, res)) {
+    return;
   }
 
   const headerKey = req.headers['x-admin-key'];
@@ -92,29 +244,20 @@ function authenticateAdminGui(req, res, next) {
   const candidateKey = headerKey || basicKey;
 
   if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
+    recordAdminAuthFailure(clientIp);
     res.setHeader('WWW-Authenticate', 'Basic realm="MIRA Knowledge Governance Console", charset="UTF-8"');
     return res.status(401).send('401 Unauthorized: Valid MIRA Admin credentials required.');
   }
 
+  clearAdminAuthFailures(clientIp);
   return next();
 }
 
 // Protect Admin GUI static assets and root route with authentication challenge BEFORE static serving
-app.use('/admin', authenticateAdminGui);
+app.use('/admin', applyAdminHeaders, applyAdminCsp, authenticateAdminGui);
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin', 'index.html'));
-});
-
-// Handle malformed JSON request bodies gracefully
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    return res.status(400).json({
-      success: false,
-      error: 'Malformed JSON in request body. Please ensure valid JSON structure.'
-    });
-  }
-  next();
 });
 
 // Helper function to get Gemini SDK client dynamically
@@ -190,7 +333,7 @@ function parseConversation(body) {
    HEALTH CHECK ENDPOINT
    GET /api/health
    ════════════════════════════════════════════ */
-app.get('/api/health', (req, res) => {
+app.get('/api/health', publicProbeLimiter, (req, res) => {
   const hasKey = Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '');
   res.status(200).json({
     status: 'ok',
@@ -202,7 +345,7 @@ app.get('/api/health', (req, res) => {
    DEVELOPER OBSERVABILITY STATS ENDPOINT
    GET /api/stats
    ════════════════════════════════════════════ */
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', publicProbeLimiter, (req, res) => {
   res.status(200).json(getMetrics());
 });
 
@@ -211,7 +354,7 @@ app.get('/api/stats', (req, res) => {
    POST /api/chat
    Body: { "messages": [ { "role": "user", "content": "What does Moses do?" } ] }
    ════════════════════════════════════════════ */
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', chatLimiter, async (req, res) => {
   try {
     recordRequest();
 
@@ -222,6 +365,27 @@ app.post('/api/chat', async (req, res) => {
         success: false,
         error: 'Missing GEMINI_API_KEY. Please add your Gemini API key to backend/.env file.'
       });
+    }
+
+    // Input bounds validation (SEC-05)
+    if (Array.isArray(req.body.messages)) {
+      if (req.body.messages.length > 10) {
+        return res.status(400).json({
+          success: false,
+          error: 'Conversation history exceeds the maximum allowed length of 10 messages.'
+        });
+      }
+      let totalChars = 0;
+      for (const msg of req.body.messages) {
+        const text = typeof msg.content === 'string' ? msg.content : (msg.text || '');
+        totalChars += text.length;
+      }
+      if (totalChars > 8000) {
+        return res.status(400).json({
+          success: false,
+          error: 'Conversation exceeds the maximum allowed character limit of 8,000 characters.'
+        });
+      }
     }
 
     // Parse conversation payload
@@ -240,6 +404,13 @@ app.post('/api/chat', async (req, res) => {
       userQuery = typeof lastMsg.content === 'string' ? lastMsg.content : (lastMsg.text || '');
     } else if (typeof req.body.message === 'string') {
       userQuery = req.body.message;
+    }
+
+    if (userQuery.length > 2000) {
+      return res.status(400).json({
+        success: false,
+        error: 'User message exceeds the maximum allowed length of 2,000 characters.'
+      });
     }
 
     // LAYER 1.5: Authority Laundering Guardrail (0ms, $0 cost)
@@ -449,16 +620,6 @@ app.post('/api/chat', async (req, res) => {
 });
 
 /* ════════════════════════════════════════════
-   PHASE 1 BACKWARD COMPATIBILITY TEST ENDPOINT
-   POST /api/test
-   ════════════════════════════════════════════ */
-app.post('/api/test', async (req, res) => {
-  // Forward to /api/chat logic
-  req.url = '/api/chat';
-  return app._router.handle(req, res);
-});
-
-/* ════════════════════════════════════════════
    MIRA KNOWLEDGE GOVERNANCE ADMIN API (PHASE 16)
    ════════════════════════════════════════════ */
 const {
@@ -492,16 +653,21 @@ function reloadFaqEntries() {
 }
 
 /**
- * Centralized Timing-Safe Admin Authentication Middleware for /api/admin/*
+ * Centralized Timing-Safe Admin Authentication Middleware for /api/admin/* (with Throttling)
  */
 function authenticateAdmin(req, res, next) {
   const adminApiKey = process.env.ADMIN_API_KEY ? process.env.ADMIN_API_KEY.trim() : '';
+  const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
 
   if (!adminApiKey) {
     return res.status(503).json({
       success: false,
       error: 'Admin authentication is not configured.'
     });
+  }
+
+  if (checkAdminFailedThrottling(clientIp, res)) {
+    return;
   }
 
   const headerKey = req.headers['x-admin-key'];
@@ -513,17 +679,19 @@ function authenticateAdmin(req, res, next) {
   const candidateKey = headerKey || basicKey || bearerKey;
 
   if (!candidateKey || !verifyTimingSafeKey(candidateKey, adminApiKey)) {
+    recordAdminAuthFailure(clientIp);
     return res.status(401).json({
       success: false,
       error: 'Unauthorized.'
     });
   }
 
+  clearAdminAuthFailures(clientIp);
   return next();
 }
 
-// Protect all /api/admin/* endpoints with centralized authentication middleware
-app.use('/api/admin', authenticateAdmin);
+// Protect all /api/admin/* endpoints with administrative headers and centralized authentication
+app.use('/api/admin', applyAdminHeaders, authenticateAdmin);
 
 // 1. GET /api/admin/stats
 app.get('/api/admin/stats', (req, res) => {

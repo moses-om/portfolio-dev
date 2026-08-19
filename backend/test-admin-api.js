@@ -1,7 +1,7 @@
 /**
- * MIRA Knowledge Governance Admin API & Security Verification Suite (Phase 1 Hardened)
- * Validates administrative authentication, GUI access boundary, CORS enforcement,
- * static file isolation, and canonical governance actions.
+ * MIRA Knowledge Governance Admin API & Production Security Verification Suite (Phase 2A Hardened)
+ * Validates administrative authentication, rate limiting, payload/prompt bounding,
+ * security headers, cache-control, CORS, static file isolation, and canonical governance actions.
  */
 
 const assert = require('assert');
@@ -15,10 +15,19 @@ const ADMIN_API_KEY = process.env.ADMIN_API_KEY || 'test_admin_key';
 function request(method, reqPath, body = null, customHeaders = {}) {
   return new Promise((resolve, reject) => {
     const url = new URL(reqPath, BASE_URL);
+    let bodyBuffer = null;
+
     const headers = {
-      'Content-Type': 'application/json',
       ...customHeaders
     };
+
+    if (body !== null) {
+      bodyBuffer = Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
+      if (!headers['Content-Type']) {
+        headers['Content-Type'] = 'application/json';
+      }
+      headers['Content-Length'] = bodyBuffer.length;
+    }
 
     const options = {
       method,
@@ -34,16 +43,16 @@ function request(method, reqPath, body = null, customHeaders = {}) {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          resolve({ status: res.statusCode, headers: res.headers, body: parsed });
+          resolve({ status: res.statusCode, headers: res.headers, body: parsed, raw: data });
         } catch (e) {
-          resolve({ status: res.statusCode, headers: res.headers, text: data });
+          resolve({ status: res.statusCode, headers: res.headers, text: data, raw: data });
         }
       });
     });
 
     req.on('error', reject);
-    if (body) {
-      req.write(JSON.stringify(body));
+    if (bodyBuffer) {
+      req.write(bodyBuffer);
     }
     req.end();
   });
@@ -51,7 +60,7 @@ function request(method, reqPath, body = null, customHeaders = {}) {
 
 async function runAdminApiTests() {
   console.log('\n===============================================================');
-  console.log(' MIRA Knowledge Governance Security & Admin Verification Suite');
+  console.log(' MIRA Knowledge Governance Security & Hardening Verification Suite (Phase 2A)');
   console.log(' Target: http://localhost:3001');
   console.log('===============================================================\n');
 
@@ -97,15 +106,93 @@ async function runAdminApiTests() {
     assert.notStrictEqual(res.headers['access-control-allow-origin'], 'https://evil.example');
   });
 
-  // ─── 2. PUBLIC /api/chat ENDPOINT INTEGRITY ───
-  await test('Public /api/chat remains functional without admin credentials', async () => {
+  // ─── 2. HTTP SECURITY HEADERS & CACHE CONTROL (SEC-03, SEC-04) ───
+  await test('Security Headers: X-Content-Type-Options is nosniff', async () => {
+    const res = await request('GET', '/api/health');
+    assert.strictEqual(res.headers['x-content-type-options'], 'nosniff');
+  });
+
+  await test('Security Headers: X-Frame-Options is DENY', async () => {
+    const res = await request('GET', '/api/health');
+    assert.strictEqual(res.headers['x-frame-options'], 'DENY');
+  });
+
+  await test('Security Headers: Referrer-Policy is strict-origin-when-cross-origin', async () => {
+    const res = await request('GET', '/api/health');
+    assert.strictEqual(res.headers['referrer-policy'], 'strict-origin-when-cross-origin');
+  });
+
+  await test('Security Headers: Permissions-Policy is present', async () => {
+    const res = await request('GET', '/api/health');
+    assert.ok(res.headers['permissions-policy'] != null);
+    assert.ok(res.headers['permissions-policy'].includes('camera=()'));
+  });
+
+  await test('Security Headers: Admin endpoints emit Cache-Control: no-store, private', async () => {
+    const res = await request('GET', '/api/admin/stats', null, authHeader);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers['cache-control'] != null);
+    assert.ok(res.headers['cache-control'].includes('no-store'));
+    assert.ok(res.headers['cache-control'].includes('private'));
+    assert.strictEqual(res.headers['pragma'], 'no-cache');
+    assert.strictEqual(res.headers['expires'], '0');
+  });
+
+  await test('Security Headers: /admin GUI emits targeted CSP', async () => {
+    const res = await request('GET', '/admin/', null, authHeader);
+    assert.strictEqual(res.status, 200);
+    assert.ok(res.headers['content-security-policy'] != null);
+    assert.ok(res.headers['content-security-policy'].includes("default-src 'self'"));
+    assert.ok(res.headers['content-security-policy'].includes("https://fonts.googleapis.com"));
+  });
+
+  // ─── 3. PAYLOAD & PROMPT BOUNDS (SEC-05) ───
+  await test('Payload Limits: Normal message (100 chars) succeeds (200 OK)', async () => {
     const res = await request('POST', '/api/chat', { message: 'What is Moses\'s background?' });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(res.body.response != null);
   });
 
-  // ─── 3. STATIC FILE EXPOSURE CHECKS ───
+  await test('Payload Limits: Oversized prompt (>2,000 chars) is rejected (400 Bad Request)', async () => {
+    const giantPrompt = 'A'.repeat(2005);
+    const res = await request('POST', '/api/chat', { message: giantPrompt });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('2,000 characters'));
+  });
+
+  await test('Payload Limits: Excessive conversation history (>10 messages) is rejected (400 Bad Request)', async () => {
+    const history = [];
+    for (let i = 0; i < 11; i++) {
+      history.push({ role: 'user', content: `Message number ${i}` });
+    }
+    const res = await request('POST', '/api/chat', { messages: history });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('10 messages'));
+  });
+
+  await test('Payload Limits: Excessive total conversation characters (>8,000 chars) is rejected (400 Bad Request)', async () => {
+    const history = [
+      { role: 'user', content: 'B'.repeat(4500) },
+      { role: 'assistant', content: 'C'.repeat(4000) }
+    ];
+    const res = await request('POST', '/api/chat', { messages: history });
+    assert.strictEqual(res.status, 400);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('8,000 characters'));
+  });
+
+  await test('Payload Limits: Oversized JSON body (>64KB) returns 413 Payload Too Large', async () => {
+    const giantPayload = JSON.stringify({ message: 'x', padding: '0'.repeat(70 * 1024) });
+    const res = await request('POST', '/api/chat', giantPayload, { 'Content-Type': 'application/json' });
+    assert.strictEqual(res.status, 413);
+    assert.strictEqual(res.body.success, false);
+    assert.ok(res.body.error.includes('64KB limit'));
+  });
+
+  // ─── 4. STATIC FILE EXPOSURE CHECKS ───
   await test('Static Exposure: GET /backend/server.js is blocked (404)', async () => {
     const res = await request('GET', '/backend/server.js');
     assert.strictEqual(res.status, 404);
@@ -126,7 +213,13 @@ async function runAdminApiTests() {
     assert.strictEqual(res.status, 404);
   });
 
-  // ─── 4. ADMIN GUI AUTHENTICATION ENFORCEMENT CHECKS ───
+  // ─── 5. ROUTE HOUSEKEEPING (SEC-06) ───
+  await test('Route Housekeeping: POST /api/test is removed (404 Not Found)', async () => {
+    const res = await request('POST', '/api/test', { message: 'test' });
+    assert.strictEqual(res.status, 404);
+  });
+
+  // ─── 6. ADMIN GUI AUTHENTICATION ENFORCEMENT CHECKS ───
   await test('Admin GUI Auth: Unauthenticated GET /admin/ is rejected (401 + WWW-Authenticate)', async () => {
     const res = await request('GET', '/admin/');
     assert.strictEqual(res.status, 401);
@@ -152,7 +245,7 @@ async function runAdminApiTests() {
     assert.ok(res.text.includes('MIRA KNOWLEDGE GOVERNANCE CONSOLE'));
   });
 
-  // ─── 5. ADMIN API AUTHENTICATION ENFORCEMENT CHECKS ───
+  // ─── 7. ADMIN API AUTHENTICATION & FAILED-AUTH THROTTLING (SEC-02) ───
   await test('Admin Auth: GET /api/admin/stats without x-admin-key returns 401 Unauthorized', async () => {
     const res = await request('GET', '/api/admin/stats');
     assert.strictEqual(res.status, 401);
@@ -167,7 +260,13 @@ async function runAdminApiTests() {
     assert.strictEqual(res.body.error, 'Unauthorized.');
   });
 
-  // ─── 6. AUTHENTICATED GOVERNANCE ACTIONS ───
+  await test('Admin Auth: Valid credentials succeed and reset failure counter', async () => {
+    const res = await request('GET', '/api/admin/stats', null, authHeader);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.success, true);
+  });
+
+  // ─── 8. AUTHENTICATED GOVERNANCE ACTIONS ───
   await test('Admin Auth: GET /api/admin/stats with valid x-admin-key returns 200 OK', async () => {
     const res = await request('GET', '/api/admin/stats', null, authHeader);
     assert.strictEqual(res.status, 200);
@@ -231,6 +330,27 @@ async function runAdminApiTests() {
     const res = await request('POST', '/api/admin/keep', {}, authHeader);
     assert.strictEqual(res.status, 400);
     assert.strictEqual(res.body.success, false);
+  });
+
+  // ─── 9. RATE LIMITING STRESS ASSERTION (SEC-01) ───
+  await test('Rate Limiting: /api/chat enforces per-minute ceiling and returns 429 + Retry-After', async () => {
+    let triggered429 = false;
+    let retryAfterFound = false;
+
+    // Send rapid requests until 429 is received (limit is 30/min)
+    for (let i = 0; i < 35; i++) {
+      const res = await request('POST', '/api/chat', { message: 'Who is Moses?' });
+      if (res.status === 429) {
+        triggered429 = true;
+        if (res.headers['retry-after']) {
+          retryAfterFound = true;
+        }
+        break;
+      }
+    }
+
+    assert.ok(triggered429, 'Expected chat rate limiter to trigger HTTP 429');
+    assert.ok(retryAfterFound, 'Expected rate limited response to include Retry-After header');
   });
 
   console.log('\n===============================================================');
