@@ -1713,7 +1713,7 @@
     };
 
     // Call Backend Streaming / Query Endpoint
-    fetch('/api/chat', {
+    fetch(API_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
